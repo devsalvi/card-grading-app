@@ -130,9 +130,13 @@ Resources:
       CallbackURLs:
         - http://localhost:5173
         - http://localhost:5173/
+        - https://main.d1xsxgfyygtbif.amplifyapp.com
+        - https://main.d1xsxgfyygtbif.amplifyapp.com/
       LogoutURLs:
         - http://localhost:5173
         - http://localhost:5173/
+        - https://main.d1xsxgfyygtbif.amplifyapp.com
+        - https://main.d1xsxgfyygtbif.amplifyapp.com/
       PreventUserExistenceErrors: ENABLED
       AccessTokenValidity: 60
       IdTokenValidity: 60
