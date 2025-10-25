@@ -121,7 +121,7 @@ function CardSubmissionForm({ onSubmit }) {
   }
 
   /**
-   * Analyze all uploaded cards using Google Gemini
+   * Analyze all uploaded cards using backend API (Google Gemini)
    * Each card is analyzed separately in parallel
    */
   const analyzeAllCards = async () => {
@@ -130,24 +130,14 @@ function CardSubmissionForm({ onSubmit }) {
     setAnalyzing(true)
 
     try {
-      const apiKey = import.meta.env.VITE_GOOGLE_GEMINI_API_KEY
-
-      // Analyze all cards in parallel
+      // Analyze all cards in parallel using backend API
       const analysisPromises = cards.map(async (card, index) => {
         try {
           // Convert image to base64
           const base64Image = await urlToBase64(card.image)
 
-          let cardData
-
-          if (!apiKey || apiKey.trim() === '') {
-            console.warn(`Card ${index + 1}: Google Gemini API key not configured, using mock data`)
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            cardData = getMockCardData()
-          } else {
-            console.log(`Analyzing card ${index + 1}...`)
-            cardData = await analyzeCardWithGemini(base64Image)
-          }
+          console.log(`Analyzing card ${index + 1} via backend API...`)
+          const cardData = await analyzeCardWithGemini(base64Image)
 
           return { index, cardData, success: true }
         } catch (error) {

@@ -126,11 +126,24 @@ Important:
 - Return ONLY valid JSON, no additional text or explanation`;
 
   // Prepare the image data
+  // Remove data URI prefix if present (e.g., "data:image/png;base64,")
+  let imageData = base64Image;
+  let mimeType = 'image/jpeg'; // Default
+
+  if (base64Image.startsWith('data:')) {
+    const match = base64Image.match(/^data:(image\/[a-zA-Z]+);base64,(.+)$/);
+    if (match) {
+      mimeType = match[1]; // Extract MIME type (e.g., "image/png", "image/jpeg")
+      imageData = match[2]; // Extract just the base64 data
+      console.log(`Extracted MIME type: ${mimeType}, base64 length: ${imageData.length}`);
+    }
+  }
+
   const imageParts = [
     {
       inlineData: {
-        data: base64Image,
-        mimeType: 'image/jpeg'
+        data: imageData,
+        mimeType: mimeType
       }
     }
   ];
