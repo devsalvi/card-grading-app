@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './CardSubmissionForm.css'
 import { urlToBase64 } from '../utils/imageUtils'
 import { analyzeCardWithGemini, getMockCardData } from '../services/cardAnalysis'
 import { submitCardGrading } from '../services/submissionService'
+import { getUserProfile, isAuthenticated } from '../services/authService'
 
 const GRADING_COMPANIES = [
   { id: 'psa', name: 'PSA (Professional Sports Authenticator)', turnaround: '10-45 days', price: '$20-$150' },
@@ -32,6 +33,29 @@ function CardSubmissionForm({ onSubmit }) {
   const [errors, setErrors] = useState({})
   const [analyzing, setAnalyzing] = useState(false)
   const [autoFilled, setAutoFilled] = useState(false)
+
+  // Auto-populate user info from social login or authenticated session
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      const authenticated = await isAuthenticated()
+      if (authenticated) {
+        const profile = await getUserProfile()
+        if (profile) {
+          setSubmitterInfo(prev => ({
+            ...prev,
+            submitterName: profile.name || prev.submitterName,
+            email: profile.email || prev.email,
+            phone: profile.phone || prev.phone,
+            address: profile.address || prev.address,
+          }))
+          if (profile.name || profile.email) {
+            setAutoFilled(true)
+          }
+        }
+      }
+    }
+    loadUserInfo()
+  }, [])
 
   const handleSubmitterChange = (e) => {
     const { name, value } = e.target
@@ -568,6 +592,11 @@ function CardSubmissionForm({ onSubmit }) {
       {cards.length > 0 && (
         <div className="form-section">
           <h3>Your Information</h3>
+          {autoFilled && (
+            <div className="auto-fill-notice">
+              ✓ Your information has been auto-filled from your profile. You can edit any field if needed.
+            </div>
+          )}
           <div className="form-grid">
             <div className="form-group">
               <label htmlFor="submitterName">Full Name *</label>

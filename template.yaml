@@ -12,6 +12,201 @@ Globals:
         DYNAMODB_TABLE_NAME: !Ref CardGradingSubmissionsTable
 
 Resources:
+  # IAM Role for post-confirmation Lambda to add users to groups
+  PostConfirmationFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: CognitoAdminAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:AdminAddUserToGroup
+                Resource: '*'
+
+  # Lambda function for post-confirmation trigger (admin group assignment)
+  # Defined first to avoid circular dependency
+  PostConfirmationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: CardGradingPostConfirmation
+      CodeUri: lambda/post-confirmation/
+      Handler: index.handler
+      Description: Adds users to admin groups based on company code validation
+      Role: !GetAtt PostConfirmationFunctionRole.Arn
+      Environment:
+        Variables:
+          PSA_ADMIN_CODE: PSA-SECURE-2024
+          BGS_ADMIN_CODE: BGS-SECURE-2024
+          SGC_ADMIN_CODE: SGC-SECURE-2024
+          CGC_ADMIN_CODE: CGC-SECURE-2024
+          SUPER_ADMIN_CODE: SUPER-SECURE-2024
+
+  # Cognito User Pool for Authentication
+  CardGradingUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: CardGradingUserPool
+      AutoVerifiedAttributes:
+        - email
+      UsernameAttributes:
+        - email
+      UsernameConfiguration:
+        CaseSensitive: false
+      LambdaConfig:
+        PostConfirmation: !GetAtt PostConfirmationFunction.Arn
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: false
+          Required: true
+        - Name: name
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+        - Name: company
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+        - Name: adminCode
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+
+  # Cognito User Pool Domain
+  CardGradingUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Sub 'card-grading-${AWS::AccountId}'
+      UserPoolId: !Ref CardGradingUserPool
+
+  # Cognito User Pool Client
+  CardGradingUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn: CardGradingUserPoolDomain
+    Properties:
+      ClientName: CardGradingWebClient
+      UserPoolId: !Ref CardGradingUserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+      SupportedIdentityProviders:
+        - COGNITO
+        # Add Google and Facebook after configuring them via AWS CLI
+        # - Google
+        # - Facebook
+      AllowedOAuthFlows:
+        - code
+        - implicit
+      AllowedOAuthScopes:
+        - email
+        - openid
+        - profile
+      AllowedOAuthFlowsUserPoolClient: true
+      CallbackURLs:
+        - http://localhost:5173
+        - http://localhost:5173/
+      LogoutURLs:
+        - http://localhost:5173
+        - http://localhost:5173/
+      PreventUserExistenceErrors: ENABLED
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
+      ReadAttributes:
+        - email
+        - name
+        - address
+        - email_verified
+        - profile
+        - custom:company
+        - custom:adminCode
+      WriteAttributes:
+        - email
+        - name
+        - address
+        - custom:company
+        - custom:adminCode
+
+  # Admin User Groups - Company-Specific
+  PSAAdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: PSA-Admins
+      Description: PSA (Professional Sports Authenticator) admin users
+      UserPoolId: !Ref CardGradingUserPool
+      Precedence: 1
+
+  BGSAdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: BGS-Admins
+      Description: BGS (Beckett Grading Services) admin users
+      UserPoolId: !Ref CardGradingUserPool
+      Precedence: 2
+
+  SGCAdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: SGC-Admins
+      Description: SGC (Sportscard Guaranty) admin users
+      UserPoolId: !Ref CardGradingUserPool
+      Precedence: 3
+
+  CGCAdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: CGC-Admins
+      Description: CGC (Certified Guaranty Company) admin users
+      UserPoolId: !Ref CardGradingUserPool
+      Precedence: 4
+
+  # Super Admin Group (access to all companies)
+  SuperAdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: Super-Admins
+      Description: Super administrator users with access to all submissions
+      UserPoolId: !Ref CardGradingUserPool
+      Precedence: 0
+
+  # Permission for Cognito to invoke the post-confirmation Lambda
+  PostConfirmationFunctionCognitoPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref PostConfirmationFunction
+      Principal: cognito-idp.amazonaws.com
+      Action: lambda:InvokeFunction
+      SourceArn: !GetAtt CardGradingUserPool.Arn
+
   # DynamoDB Table
   CardGradingSubmissionsTable:
     Type: AWS::DynamoDB::Table
@@ -66,11 +261,89 @@ Resources:
             Path: /submissions
             Method: POST
             RestApiId: !Ref CardGradingAPI
+
+  # Lambda Function for Admin - Get Submission
+  AdminGetSubmissionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: CardGradingAdminGetSubmission
+      CodeUri: lambda/admin-operations/
+      Handler: index.getSubmission
+      Description: 'Admin function to get submission by ID'
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref CardGradingSubmissionsTable
+      Events:
         GetSubmission:
           Type: Api
           Properties:
-            Path: /submissions/{submissionId}
+            Path: /admin/submissions/{submissionId}
             Method: GET
+            RestApiId: !Ref CardGradingAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  # Lambda Function for Admin - List Submissions
+  AdminListSubmissionsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: CardGradingAdminListSubmissions
+      CodeUri: lambda/admin-operations/
+      Handler: index.listSubmissions
+      Description: 'Admin function to list all submissions'
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref CardGradingSubmissionsTable
+      Events:
+        ListSubmissions:
+          Type: Api
+          Properties:
+            Path: /admin/submissions
+            Method: GET
+            RestApiId: !Ref CardGradingAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  # Lambda Function for Admin - Search by Email
+  AdminSearchByEmailFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: CardGradingAdminSearchByEmail
+      CodeUri: lambda/admin-operations/
+      Handler: index.searchByEmail
+      Description: 'Admin function to search submissions by email'
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref CardGradingSubmissionsTable
+      Events:
+        SearchByEmail:
+          Type: Api
+          Properties:
+            Path: /admin/search
+            Method: GET
+            RestApiId: !Ref CardGradingAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  # Lambda Function for Card Image Analysis
+  AnalyzeCardFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: CardGradingAnalyzeCard
+      CodeUri: lambda/analyze-card/
+      Handler: index.handler
+      Description: 'Analyzes card images using Google Gemini Vision API'
+      Timeout: 60
+      MemorySize: 512
+      Environment:
+        Variables:
+          GOOGLE_GEMINI_API_KEY: 'AIzaSyAaSuIxhs2wYlyCrGuOzRYNrzEn7zceazM'
+      Events:
+        AnalyzeCard:
+          Type: Api
+          Properties:
+            Path: /analyze-card
+            Method: POST
             RestApiId: !Ref CardGradingAPI
 
   # API Gateway
@@ -83,73 +356,12 @@ Resources:
         AllowMethods: "'GET,POST,OPTIONS'"
         AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
         AllowOrigin: "'*'"
-      DefinitionBody:
-        swagger: '2.0'
-        info:
-          title: Card Grading API
-          version: '1.0'
-        paths:
-          /submissions:
-            post:
-              x-amazon-apigateway-integration:
-                uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SubmitCardFunction.Arn}/invocations'
-                httpMethod: POST
-                type: aws_proxy
-              responses:
-                '200':
-                  description: 'Successful submission'
-            options:
-              x-amazon-apigateway-integration:
-                type: mock
-                requestTemplates:
-                  application/json: '{"statusCode": 200}'
-                responses:
-                  default:
-                    statusCode: '200'
-                    responseParameters:
-                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
-                      method.response.header.Access-Control-Allow-Origin: "'*'"
-              responses:
-                '200':
-                  headers:
-                    Access-Control-Allow-Headers:
-                      type: string
-                    Access-Control-Allow-Methods:
-                      type: string
-                    Access-Control-Allow-Origin:
-                      type: string
-
-          /submissions/{submissionId}:
-            get:
-              x-amazon-apigateway-integration:
-                uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SubmitCardFunction.Arn}/invocations'
-                httpMethod: POST
-                type: aws_proxy
-              responses:
-                '200':
-                  description: 'Submission details'
-            options:
-              x-amazon-apigateway-integration:
-                type: mock
-                requestTemplates:
-                  application/json: '{"statusCode": 200}'
-                responses:
-                  default:
-                    statusCode: '200'
-                    responseParameters:
-                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
-                      method.response.header.Access-Control-Allow-Origin: "'*'"
-              responses:
-                '200':
-                  headers:
-                    Access-Control-Allow-Headers:
-                      type: string
-                    Access-Control-Allow-Methods:
-                      type: string
-                    Access-Control-Allow-Origin:
-                      type: string
+      Auth:
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !GetAtt CardGradingUserPool.Arn
+            Identity:
+              Header: Authorization
 
 Outputs:
   ApiEndpoint:
@@ -169,3 +381,33 @@ Outputs:
     Value: !GetAtt SubmitCardFunction.Arn
     Export:
       Name: CardGradingSubmitFunctionArn
+
+  UserPoolId:
+    Description: 'Cognito User Pool ID'
+    Value: !Ref CardGradingUserPool
+    Export:
+      Name: CardGradingUserPoolId
+
+  UserPoolClientId:
+    Description: 'Cognito User Pool Client ID'
+    Value: !Ref CardGradingUserPoolClient
+    Export:
+      Name: CardGradingUserPoolClientId
+
+  UserPoolArn:
+    Description: 'Cognito User Pool ARN'
+    Value: !GetAtt CardGradingUserPool.Arn
+    Export:
+      Name: CardGradingUserPoolArn
+
+  UserPoolDomain:
+    Description: 'Cognito User Pool Domain'
+    Value: !Sub 'card-grading-${AWS::AccountId}'
+    Export:
+      Name: CardGradingUserPoolDomain
+
+  HostedUIUrl:
+    Description: 'Cognito Hosted UI URL'
+    Value: !Sub 'https://card-grading-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com'
+    Export:
+      Name: CardGradingHostedUIUrl

@@ -1,43 +1,18 @@
-import { useState } from 'react'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import './App.css'
-import CardSubmissionForm from './components/CardSubmissionForm'
-import SubmissionSummary from './components/SubmissionSummary'
+import MainPage from './pages/MainPage'
+import AdminPortal from './pages/AdminPortal'
 
 function App() {
-  const [submissions, setSubmissions] = useState([])
-  const [showSummary, setShowSummary] = useState(false)
-
-  const handleSubmission = (submissionData) => {
-    setSubmissions([...submissions, { ...submissionData, id: Date.now() }])
-    setShowSummary(true)
-  }
-
-  const handleNewSubmission = () => {
-    setShowSummary(false)
-  }
-
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>Card Grading Submission Portal</h1>
-        <p>Submit your collector cards to professional grading companies</p>
-      </header>
-
-      <main className="app-main">
-        {!showSummary ? (
-          <CardSubmissionForm onSubmit={handleSubmission} />
-        ) : (
-          <SubmissionSummary
-            submissions={submissions}
-            onNewSubmission={handleNewSubmission}
-          />
-        )}
-      </main>
-
-      <footer className="app-footer">
-        <p>© 2024 Card Grading Submission Portal. For demonstration purposes only.</p>
-      </footer>
-    </div>
+    <Router>
+      <div className="app">
+        <Routes>
+          <Route path="/" element={<MainPage />} />
+          <Route path="/admin" element={<AdminPortal />} />
+        </Routes>
+      </div>
+    </Router>
   )
 }
 

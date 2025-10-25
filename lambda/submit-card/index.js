@@ -3,7 +3,12 @@ const { DynamoDBDocumentClient, PutCommand, GetCommand } = require('@aws-sdk/lib
 
 // Initialize DynamoDB client
 const client = new DynamoDBClient({});
-const docClient = DynamoDBDocumentClient.from(client);
+const docClient = DynamoDBDocumentClient.from(client, {
+  marshallOptions: {
+    removeUndefinedValues: true, // Remove undefined values from the object
+    convertEmptyValues: false,
+  },
+});
 
 const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME || 'CardGradingSubmissions';
 
@@ -64,18 +69,18 @@ exports.handler = async (event) => {
       gradingCompany: body.gradingCompany,
       submitterName: body.submitterName,
       email: body.email,
-      phone: body.phone || null,
-      address: body.address || null,
-      specialInstructions: body.specialInstructions || null,
+      phone: body.phone || undefined,
+      address: body.address || undefined,
+      specialInstructions: body.specialInstructions || undefined,
 
       // Cards array (storing card details)
       cards: body.cards.map(card => ({
         cardType: card.cardType,
-        sport: card.sport || null,
+        sport: card.sport || undefined,
         playerName: card.playerName,
         year: card.year,
-        manufacturer: card.manufacturer || null,
-        cardNumber: card.cardNumber || null,
+        manufacturer: card.manufacturer || undefined,
+        cardNumber: card.cardNumber || undefined,
         estimatedCondition: card.estimatedCondition,
         declaredValue: card.declaredValue,
         // Note: Not storing base64 image data to save storage costs

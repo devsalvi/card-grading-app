@@ -1,8 +1,8 @@
 # Google Gemini Integration Setup Guide
 
-This app uses **Google Gemini 2.5 Flash** to analyze card images with advanced AI vision!
+This app uses **Google Gemini 2.5 Flash** to analyze card images with advanced AI vision via a secure backend Lambda function!
 
-## Quick Setup (2 minutes)
+## Quick Setup (3 minutes)
 
 ### Step 1: Get Your Google Gemini API Key
 
@@ -12,41 +12,56 @@ This app uses **Google Gemini 2.5 Flash** to analyze card images with advanced A
 4. Click **"Create API key in new project"** (or select an existing project)
 5. **Copy your API key** (starts with `AIza...`)
 
-### Step 2: Configure the App
+### Step 2: Configure the Backend Lambda
 
-1. Open the `.env` file in the root of the project
-2. Add your API key:
+1. Open the `template.yaml` file in the root of the project
+2. Find the `AnalyzeCardFunction` section
+3. Update the `GOOGLE_GEMINI_API_KEY` environment variable:
 
-```bash
-VITE_GOOGLE_GEMINI_API_KEY=AIzaSyAaSuIxhs2wYlyCrGuOzRYNrzEn7zceazM
+```yaml
+AnalyzeCardFunction:
+  Type: AWS::Serverless::Function
+  Properties:
+    FunctionName: CardGradingAnalyzeCard
+    Environment:
+      Variables:
+        GOOGLE_GEMINI_API_KEY: 'AIzaSyAaSuIxhs2wYlyCrGuOzRYNrzEn7zceazM'  # Replace with your key
 ```
 
 3. Save the file
 
-### Step 3: Restart the Development Server
+### Step 3: Deploy the Backend
 
 ```bash
-# Stop the current server (Ctrl+C)
-# Then restart it:
-npm run dev
+# Build the SAM application
+sam build
+
+# Deploy to AWS
+sam deploy --resolve-s3
 ```
 
-That's it! The app will now use Google Gemini to analyze your cards.
+That's it! The backend Lambda will now use Google Gemini to analyze your cards securely.
 
 ## How It Works
 
-The app uses **Google Gemini 2.5 Flash** vision model:
+The app uses **Google Gemini 2.5 Flash** vision model via a secure backend architecture:
 
-1. **@google/generative-ai Library**
-   - Official Google library for JavaScript/Node.js
+1. **Backend Lambda Function** (`lambda/analyze-card/`)
+   - Securely stores API key in Lambda environment variables
+   - Uses **@google/generative-ai** library (server-side)
    - Direct API integration
-   - No third-party dependencies
+   - No API key exposure to frontend
 
 2. **gemini-2.5-flash-preview-05-20** (Multimodal AI Model)
    - Google's latest Gemini 2.5 Flash variant
    - Fast, cost-effective vision analysis
    - Advanced OCR for reading card text
    - Multimodal understanding (vision + language)
+
+3. **API Gateway Endpoint**
+   - Frontend calls `POST /analyze-card`
+   - Sends base64-encoded image
+   - Receives structured JSON response
 
 3. **Structured JSON Extraction**
    - Sends detailed prompt requesting card information in JSON format

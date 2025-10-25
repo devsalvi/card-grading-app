@@ -1,0 +1,9 @@
+{
+  "name": "analyze-card-function",
+  "version": "1.0.0",
+  "description": "Lambda function to analyze card images using Google Gemini Vision API",
+  "main": "index.js",
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0"
+  }
+}

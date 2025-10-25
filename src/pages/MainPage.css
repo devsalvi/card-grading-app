@@ -1,0 +1,134 @@
+.main-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--apple-gray-1);
+}
+
+.app-header {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--apple-gray-3);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.app-header h1 {
+  color: var(--apple-gray-6);
+  font-size: 2.25rem;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.app-header p {
+  color: var(--apple-gray-5);
+  font-size: 1.0625rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.app-main {
+  flex: 1;
+  padding: 3rem 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.app-footer {
+  background: white;
+  border-top: 1px solid var(--apple-gray-3);
+  color: var(--apple-gray-5);
+  text-align: center;
+  padding: 1.5rem;
+  margin-top: auto;
+}
+
+.app-footer p {
+  font-size: 0.875rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+/* Tablet */
+@media (max-width: 768px) {
+  .app-header {
+    padding: 1.25rem 1rem;
+  }
+
+  .app-header h1 {
+    font-size: 2rem;
+    letter-spacing: -0.025em;
+  }
+
+  .app-header p {
+    font-size: 1rem;
+  }
+
+  .app-main {
+    padding: 2rem 1rem;
+  }
+
+  .app-footer {
+    padding: 1.2rem;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .app-header {
+    padding: 1rem 1rem;
+  }
+
+  .app-header h1 {
+    font-size: 1.75rem;
+    line-height: 1.2;
+    margin-bottom: 0.35rem;
+    letter-spacing: -0.02em;
+  }
+
+  .app-header p {
+    font-size: 0.9375rem;
+    line-height: 1.4;
+  }
+
+  .app-main {
+    padding: 1.5rem 1rem;
+  }
+
+  .app-footer {
+    padding: 1rem;
+  }
+
+  .app-footer p {
+    font-size: 0.8125rem;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 360px) {
+  .app-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .app-header p {
+    font-size: 0.875rem;
+  }
+
+  .app-main {
+    padding: 1rem 0.75rem;
+  }
+}

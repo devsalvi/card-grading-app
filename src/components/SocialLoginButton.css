@@ -1,0 +1,132 @@
+.social-login-banner {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border-bottom: 1px solid var(--apple-gray-3);
+  padding: 16px 20px;
+}
+
+.social-login-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+}
+
+.social-login-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--apple-gray-6);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.social-login-icon {
+  font-size: 20px;
+}
+
+.social-login-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.social-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid var(--apple-gray-3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+  color: var(--apple-gray-6);
+}
+
+.social-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.social-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.google-btn:hover:not(:disabled) {
+  border-color: #4285F4;
+}
+
+.facebook-btn:hover:not(:disabled) {
+  border-color: #1877F2;
+}
+
+.social-login-authenticated {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.social-login-user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--apple-gray-6);
+  font-size: 15px;
+}
+
+.social-login-user-info strong {
+  color: var(--apple-blue);
+}
+
+.sign-out-btn {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--apple-blue);
+  background: white;
+  border: 1px solid var(--apple-gray-3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sign-out-btn:hover {
+  background: var(--apple-gray-1);
+  border-color: var(--apple-blue);
+}
+
+@media (max-width: 768px) {
+  .social-login-content {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .social-login-text {
+    font-size: 14px;
+  }
+
+  .social-login-buttons {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .social-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .social-login-authenticated {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sign-out-btn {
+    width: 100%;
+  }
+}
