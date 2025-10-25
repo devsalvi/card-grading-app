@@ -1,0 +1,171 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'Card Grading App - Serverless Backend (Lambda + DynamoDB + API Gateway)'
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: nodejs18.x
+    MemorySize: 256
+    Environment:
+      Variables:
+        DYNAMODB_TABLE_NAME: !Ref CardGradingSubmissionsTable
+
+Resources:
+  # DynamoDB Table
+  CardGradingSubmissionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: CardGradingSubmissions
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: submissionId
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
+        - AttributeName: submittedAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: submissionId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: EmailIndex
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+            - AttributeName: submittedAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Application
+          Value: CardGradingApp
+        - Key: Environment
+          Value: Production
+
+  # Lambda Function for Submissions
+  SubmitCardFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: CardGradingSubmitFunction
+      CodeUri: lambda/submit-card/
+      Handler: index.handler
+      Description: 'Handles card grading submissions and saves to DynamoDB'
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CardGradingSubmissionsTable
+      Events:
+        SubmitCard:
+          Type: Api
+          Properties:
+            Path: /submissions
+            Method: POST
+            RestApiId: !Ref CardGradingAPI
+        GetSubmission:
+          Type: Api
+          Properties:
+            Path: /submissions/{submissionId}
+            Method: GET
+            RestApiId: !Ref CardGradingAPI
+
+  # API Gateway
+  CardGradingAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: CardGradingAPI
+      StageName: prod
+      Cors:
+        AllowMethods: "'GET,POST,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+      DefinitionBody:
+        swagger: '2.0'
+        info:
+          title: Card Grading API
+          version: '1.0'
+        paths:
+          /submissions:
+            post:
+              x-amazon-apigateway-integration:
+                uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SubmitCardFunction.Arn}/invocations'
+                httpMethod: POST
+                type: aws_proxy
+              responses:
+                '200':
+                  description: 'Successful submission'
+            options:
+              x-amazon-apigateway-integration:
+                type: mock
+                requestTemplates:
+                  application/json: '{"statusCode": 200}'
+                responses:
+                  default:
+                    statusCode: '200'
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+              responses:
+                '200':
+                  headers:
+                    Access-Control-Allow-Headers:
+                      type: string
+                    Access-Control-Allow-Methods:
+                      type: string
+                    Access-Control-Allow-Origin:
+                      type: string
+
+          /submissions/{submissionId}:
+            get:
+              x-amazon-apigateway-integration:
+                uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SubmitCardFunction.Arn}/invocations'
+                httpMethod: POST
+                type: aws_proxy
+              responses:
+                '200':
+                  description: 'Submission details'
+            options:
+              x-amazon-apigateway-integration:
+                type: mock
+                requestTemplates:
+                  application/json: '{"statusCode": 200}'
+                responses:
+                  default:
+                    statusCode: '200'
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+              responses:
+                '200':
+                  headers:
+                    Access-Control-Allow-Headers:
+                      type: string
+                    Access-Control-Allow-Methods:
+                      type: string
+                    Access-Control-Allow-Origin:
+                      type: string
+
+Outputs:
+  ApiEndpoint:
+    Description: 'API Gateway endpoint URL'
+    Value: !Sub 'https://${CardGradingAPI}.execute-api.${AWS::Region}.amazonaws.com/prod'
+    Export:
+      Name: CardGradingAPIEndpoint
+
+  TableName:
+    Description: 'DynamoDB table name'
+    Value: !Ref CardGradingSubmissionsTable
+    Export:
+      Name: CardGradingSubmissionsTableName
+
+  FunctionArn:
+    Description: 'Lambda function ARN'
+    Value: !GetAtt SubmitCardFunction.Arn
+    Export:
+      Name: CardGradingSubmitFunctionArn

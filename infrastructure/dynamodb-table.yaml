@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'DynamoDB table for Card Grading Submissions'
+
+Resources:
+  CardGradingSubmissionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: CardGradingSubmissions
+      BillingMode: PAY_PER_REQUEST  # On-demand pricing (no capacity planning needed)
+
+      AttributeDefinitions:
+        - AttributeName: submissionId
+          AttributeType: S  # String
+        - AttributeName: submittedAt
+          AttributeType: S  # ISO timestamp string
+        - AttributeName: email
+          AttributeType: S  # For querying by email
+
+      KeySchema:
+        - AttributeName: submissionId
+          KeyType: HASH  # Partition key
+
+      # Global Secondary Index for querying by email
+      GlobalSecondaryIndexes:
+        - IndexName: EmailIndex
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+            - AttributeName: submittedAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+      # Enable TTL for automatic deletion after 90 days
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+      # Enable point-in-time recovery for data protection
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+      # Tags
+      Tags:
+        - Key: Application
+          Value: CardGradingApp
+        - Key: Environment
+          Value: Production
+
+Outputs:
+  TableName:
+    Description: Name of the DynamoDB table
+    Value: !Ref CardGradingSubmissionsTable
+    Export:
+      Name: CardGradingSubmissionsTableName
+
+  TableArn:
+    Description: ARN of the DynamoDB table
+    Value: !GetAtt CardGradingSubmissionsTable.Arn
+    Export:
+      Name: CardGradingSubmissionsTableArn

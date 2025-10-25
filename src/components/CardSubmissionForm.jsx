@@ -2,6 +2,7 @@ import { useState } from 'react'
 import './CardSubmissionForm.css'
 import { urlToBase64 } from '../utils/imageUtils'
 import { analyzeCardWithGemini, getMockCardData } from '../services/cardAnalysis'
+import { submitCardGrading } from '../services/submissionService'
 
 const GRADING_COMPANIES = [
   { id: 'psa', name: 'PSA (Professional Sports Authenticator)', turnaround: '10-45 days', price: '$20-$150' },
@@ -297,7 +298,7 @@ function CardSubmissionForm({ onSubmit }) {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
     if (cards.length === 0) {
@@ -327,7 +328,30 @@ function CardSubmissionForm({ onSubmit }) {
       submissionId: Date.now()
     }
 
-    onSubmit(submission)
+    // Save to DynamoDB via API
+    try {
+      // Show loading state
+      const submitButton = e.target.querySelector('button[type="submit"]')
+      if (submitButton) {
+        submitButton.disabled = true
+        submitButton.textContent = 'Submitting...'
+      }
+
+      await submitCardGrading(submission)
+
+      // If API call succeeds, show the summary
+      onSubmit(submission)
+    } catch (error) {
+      console.error('Submission error:', error)
+      alert(`Failed to submit: ${error.message}\n\nYour submission was not saved. Please try again.`)
+
+      // Re-enable submit button
+      const submitButton = e.target.querySelector('button[type="submit"]')
+      if (submitButton) {
+        submitButton.disabled = false
+        submitButton.textContent = 'Submit for Grading'
+      }
+    }
   }
 
   return (

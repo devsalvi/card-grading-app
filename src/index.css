@@ -1,7 +1,23 @@
 :root {
-  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  /* Apple Color Palette */
+  --apple-blue: #007AFF;
+  --apple-blue-hover: #0051D5;
+  --apple-blue-light: #E5F2FF;
+  --apple-gray-1: #F5F5F7;
+  --apple-gray-2: #E8E8ED;
+  --apple-gray-3: #D2D2D7;
+  --apple-gray-4: #86868B;
+  --apple-gray-5: #6E6E73;
+  --apple-gray-6: #1D1D1F;
+  --apple-green: #34C759;
+  --apple-red: #FF3B30;
+  --apple-orange: #FF9500;
+
+  /* Apple Typography */
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  line-height: 1.47059;
   font-weight: 400;
+  color: var(--apple-gray-6);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -11,12 +27,16 @@
 
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background: var(--apple-gray-1);
+  color: var(--apple-gray-6);
 }
 
 #root {
