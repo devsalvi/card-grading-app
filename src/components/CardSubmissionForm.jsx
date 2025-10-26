@@ -4,6 +4,8 @@ import { urlToBase64 } from '../utils/imageUtils'
 import { analyzeCardWithGemini, getMockCardData } from '../services/cardAnalysis'
 import { submitCardGrading } from '../services/submissionService'
 import { getUserProfile, isAuthenticated } from '../services/authService'
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
+import { isNativePlatform } from '../utils/platform'
 
 const GRADING_COMPANIES = [
   { id: 'psa', name: 'PSA (Professional Sports Authenticator)', turnaround: '10-45 days', price: '$20-$150' },
@@ -114,6 +116,57 @@ function CardSubmissionForm({ onSubmit }) {
     }))
 
     setCards(prev => [...prev, ...newCards])
+  }
+
+  /**
+   * Handle camera capture on native platforms (Android/iOS)
+   */
+  const handleCameraCapture = async (source = CameraSource.Camera) => {
+    try {
+      // Request camera permissions and take photo
+      const photo = await Camera.getPhoto({
+        resultType: CameraResultType.Uri,
+        source: source,
+        quality: 90,
+        allowEditing: false,
+        saveToGallery: false
+      })
+
+      // Convert the photo to a blob for consistency with file upload
+      const response = await fetch(photo.webPath)
+      const blob = await response.blob()
+      const file = new File([blob], `card-${Date.now()}.jpg`, { type: 'image/jpeg' })
+
+      // Create new card entry
+      const newCard = {
+        image: photo.webPath,
+        imageFile: file,
+        cardType: '',
+        sport: '',
+        playerName: '',
+        year: '',
+        manufacturer: '',
+        cardNumber: '',
+        estimatedCondition: '',
+        declaredValue: '',
+        estimatedValue: null
+      }
+
+      setCards(prev => [...prev, newCard])
+    } catch (error) {
+      console.error('Camera capture error:', error)
+      // User cancelled or permission denied - silently handle
+      if (error.message && !error.message.includes('cancelled')) {
+        alert('Failed to capture image. Please check camera permissions in your device settings.')
+      }
+    }
+  }
+
+  /**
+   * Handle picking image from gallery on native platforms
+   */
+  const handleGalleryPick = async () => {
+    await handleCameraCapture(CameraSource.Photos)
   }
 
   const removeCard = (index) => {
@@ -407,17 +460,42 @@ function CardSubmissionForm({ onSubmit }) {
       <div className="form-section">
         <h3>Upload Card Images</h3>
         <div className="image-upload-section">
-          <label className="upload-button">
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageUpload}
-              style={{ display: 'none' }}
-            />
-            Upload or Capture Image
-          </label>
-          <p className="upload-hint">You can upload multiple cards at once</p>
+          {isNativePlatform() ? (
+            // Native platform (Android/iOS) - show camera and gallery buttons
+            <div className="native-upload-buttons">
+              <button
+                type="button"
+                className="upload-button camera-button"
+                onClick={() => handleCameraCapture(CameraSource.Camera)}
+              >
+                Take Photo
+              </button>
+              <button
+                type="button"
+                className="upload-button gallery-button"
+                onClick={handleGalleryPick}
+              >
+                Choose from Gallery
+              </button>
+            </div>
+          ) : (
+            // Web platform - show file upload
+            <label className="upload-button">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageUpload}
+                style={{ display: 'none' }}
+              />
+              Upload or Capture Image
+            </label>
+          )}
+          <p className="upload-hint">
+            {isNativePlatform()
+              ? 'Take a photo or choose from your gallery'
+              : 'You can upload multiple cards at once'}
+          </p>
 
           {cards.length > 0 && (
             <div className="cards-preview">

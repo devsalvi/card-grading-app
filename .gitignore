@@ -69,3 +69,15 @@ amplify/mock-api-resources
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Android / Capacitor
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+android/.cxx/
+android/*.iml
+android/.idea/
+android/app/keystore.properties
+*.keystore
+*.jks

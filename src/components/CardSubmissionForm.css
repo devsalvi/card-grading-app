@@ -366,6 +366,36 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
+/* Native Upload Buttons (Camera & Gallery) */
+.native-upload-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.native-upload-buttons .upload-button {
+  flex: 1;
+  min-width: 150px;
+  text-align: center;
+}
+
+.camera-button {
+  background: var(--apple-blue);
+}
+
+.camera-button:hover {
+  background: var(--apple-blue-hover);
+}
+
+.gallery-button {
+  background: var(--apple-green);
+}
+
+.gallery-button:hover {
+  background: #28a745;
+}
+
 .upload-hint {
   margin-top: 0.75rem;
   font-size: 0.875rem;
@@ -686,6 +716,15 @@
     padding: 1.2rem 1.5rem;
     font-size: 1.1rem;
     text-align: center;
+  }
+
+  .native-upload-buttons {
+    flex-direction: column;
+  }
+
+  .native-upload-buttons .upload-button {
+    min-width: 100%;
+    width: 100%;
   }
 
   .upload-hint {
