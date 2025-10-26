@@ -8,6 +8,10 @@ const GRADING_COMPANIES = {
 }
 
 function SubmissionSummary({ submissions, onNewSubmission }) {
+  const handlePrint = () => {
+    window.print()
+  }
+
   return (
     <div className="submission-summary">
       <div className="summary-header">
@@ -110,6 +114,13 @@ function SubmissionSummary({ submissions, onNewSubmission }) {
         ))}
       </div>
 
+      <div className="print-notice">
+        <p>
+          <strong>📧 For Physical Mail Submission:</strong> Print this page and include it with your cards when shipping to the grading company.
+          Your Submission ID is required for tracking.
+        </p>
+      </div>
+
       <div className="next-steps">
         <h3>What Happens Next?</h3>
         <ol>
@@ -121,6 +132,9 @@ function SubmissionSummary({ submissions, onNewSubmission }) {
       </div>
 
       <div className="summary-actions">
+        <button onClick={handlePrint} className="print-button">
+          Print Submission
+        </button>
         <button onClick={onNewSubmission} className="new-submission-button">
           Submit More Cards
         </button>

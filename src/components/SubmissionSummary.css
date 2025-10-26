@@ -183,10 +183,12 @@
 .summary-actions {
   display: flex;
   justify-content: center;
+  gap: 1rem;
   padding-top: 1.5rem;
   border-top: 2px solid #f0f0f0;
 }
 
+.print-button,
 .new-submission-button {
   background: var(--apple-blue);
   color: white;
@@ -201,13 +203,37 @@
   letter-spacing: -0.01em;
 }
 
+.print-button:hover,
 .new-submission-button:hover {
   background: var(--apple-blue-hover);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
+.print-button:active,
 .new-submission-button:active {
   transform: scale(0.98);
+}
+
+/* Print Notice */
+.print-notice {
+  background: linear-gradient(135deg, #fff9e6 0%, #fef3c7 100%);
+  border: 2px solid var(--apple-orange);
+  border-radius: 14px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.print-notice p {
+  margin: 0;
+  color: #92400e;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+.print-notice strong {
+  color: var(--apple-gray-6);
+  font-weight: 600;
 }
 
 /* Multi-Card Submission Styles */
@@ -587,5 +613,132 @@
   .new-submission-button {
     padding: 1rem 1.2rem;
     font-size: 1rem;
+  }
+}
+
+/* Print Styles */
+@media print {
+  /* Hide interactive elements */
+  .summary-actions,
+  .next-steps {
+    display: none !important;
+  }
+
+  /* Make print notice more prominent */
+  .print-notice {
+    background: white !important;
+    border: 3px solid black !important;
+    padding: 1rem !important;
+    margin-bottom: 1.5rem !important;
+    text-align: left !important;
+  }
+
+  .print-notice p {
+    color: black !important;
+    font-size: 12pt !important;
+  }
+
+  /* Clean up backgrounds for printing */
+  .submission-summary {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+
+  .submission-group {
+    background: white !important;
+    border: 2px solid #333 !important;
+    page-break-inside: avoid;
+    margin-bottom: 2rem !important;
+  }
+
+  .submission-info {
+    background: white !important;
+    border: 2px solid #007aff !important;
+  }
+
+  .submission-info h3 {
+    color: black !important;
+    font-size: 14pt !important;
+    font-weight: bold !important;
+  }
+
+  /* Make submission ID very prominent */
+  .submission-id {
+    background: black !important;
+    color: white !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 12pt !important;
+    font-weight: bold !important;
+  }
+
+  /* Card summaries */
+  .card-summary {
+    background: white !important;
+    border: 1px solid #333 !important;
+    page-break-inside: avoid;
+  }
+
+  .card-summary-header {
+    background: #333 !important;
+    color: white !important;
+  }
+
+  .card-summary-image {
+    background: white !important;
+  }
+
+  /* Text colors for printing */
+  .submitter-details p,
+  .card-summary-details .detail-row {
+    color: black !important;
+  }
+
+  .detail-label {
+    color: #333 !important;
+    font-weight: bold !important;
+  }
+
+  .detail-value {
+    color: black !important;
+  }
+
+  /* Highlight important values */
+  .card-summary-details .detail-row.highlight {
+    background: #f0f0f0 !important;
+    border: 1px solid #333 !important;
+  }
+
+  .card-summary-details .detail-row.highlight .detail-value {
+    color: black !important;
+    font-weight: bold !important;
+  }
+
+  .submission-total {
+    background: #f0f0f0 !important;
+    border: 2px solid #333 !important;
+    color: black !important;
+    font-weight: bold !important;
+  }
+
+  /* Remove shadows */
+  * {
+    box-shadow: none !important;
+  }
+
+  /* Ensure good contrast */
+  .success-message {
+    background: white !important;
+    color: black !important;
+    border: 2px solid #333 !important;
+  }
+
+  /* Page breaks */
+  .submission-group {
+    page-break-before: auto;
+    page-break-after: always;
+  }
+
+  .submission-group:last-child {
+    page-break-after: auto;
   }
 }
