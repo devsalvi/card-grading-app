@@ -415,7 +415,7 @@ function CardSubmissionForm({ onSubmit }) {
               onChange={handleImageUpload}
               style={{ display: 'none' }}
             />
-            📸 Upload Card Images (Front & Back)
+            Upload or Capture Image
           </label>
           <p className="upload-hint">You can upload multiple cards at once</p>
 
@@ -428,7 +428,7 @@ function CardSubmissionForm({ onSubmit }) {
                 onClick={analyzeAllCards}
                 disabled={analyzing}
               >
-                {analyzing ? 'Analyzing All Cards...' : '🤖 Analyze All Cards with AI'}
+                {analyzing ? 'Getting Image Details...' : 'Get Image Details'}
               </button>
             </div>
           )}
