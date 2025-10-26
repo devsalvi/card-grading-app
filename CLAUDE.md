@@ -36,19 +36,27 @@ npm run android:run    # Build, sync, and run on device/emulator
 ```
 See `ANDROID_SETUP.md` for complete Android app setup and deployment guide
 
+### iOS App Commands
+```bash
+npm run ios:sync   # Build web app and sync to iOS
+npm run ios:open   # Open iOS project in Xcode
+npm run ios:run    # Build, sync, and run on device/simulator
+```
+See `IOS_SETUP.md` for complete iOS app setup and deployment guide
+
 ## Project Architecture
 
 ### Overview
-This is a React application for submitting collector cards to professional grading companies (PSA, BGS, SGC, CGC). The app uses Vite as the build tool and follows a component-based architecture. Available as both a **web application** and a **native Android app** (using Capacitor).
+This is a React application for submitting collector cards to professional grading companies (PSA, BGS, SGC, CGC). The app uses Vite as the build tool and follows a component-based architecture. Available as a **web application**, **native Android app**, and **native iOS app** (using Capacitor).
 
 **Key Features:**
 - Image upload for card photos (front/back)
-- Native camera access on Android devices
+- Native camera access on Android and iOS devices
 - AI-powered card recognition (currently simulated - see AI_INTEGRATION.md for real API integration)
 - Automatic card value estimation based on player, year, condition
 - Multi-step submission workflow with validation
 - Responsive design for mobile and desktop
-- Native Android app with full device integration
+- Native Android and iOS apps with full device integration
 
 ### Key Components
 

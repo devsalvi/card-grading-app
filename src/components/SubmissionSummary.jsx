@@ -1,4 +1,6 @@
 import './SubmissionSummary.css'
+import { Share } from '@capacitor/share'
+import { isNativePlatform } from '../utils/platform'
 
 const GRADING_COMPANIES = {
   psa: 'PSA (Professional Sports Authenticator)',
@@ -8,10 +10,6 @@ const GRADING_COMPANIES = {
 }
 
 function SubmissionSummary({ submissions, onNewSubmission }) {
-  const handlePrint = () => {
-    window.print()
-  }
-
   const currentDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -19,6 +17,99 @@ function SubmissionSummary({ submissions, onNewSubmission }) {
     hour: '2-digit',
     minute: '2-digit'
   })
+
+  /**
+   * Generate a text summary of the submission for sharing on mobile
+   */
+  const generateTextSummary = () => {
+    let text = `CARD GRADING SUBMISSION FORM\n`
+    text += `Generated: ${currentDate}\n\n`
+    text += `${'='.repeat(50)}\n\n`
+
+    submissions.forEach((submission, idx) => {
+      text += `SUBMISSION #${submission.submissionId}\n`
+      text += `${'-'.repeat(50)}\n\n`
+
+      text += `GRADING COMPANY:\n${GRADING_COMPANIES[submission.gradingCompany]}\n\n`
+
+      text += `SUBMITTER INFORMATION:\n`
+      text += `Name: ${submission.submitterName}\n`
+      text += `Email: ${submission.email}\n`
+      if (submission.phone) text += `Phone: ${submission.phone}\n`
+      if (submission.address) text += `Address: ${submission.address}\n`
+      if (submission.specialInstructions) {
+        text += `Special Instructions: ${submission.specialInstructions}\n`
+      }
+      text += `\n`
+
+      text += `CARDS (${submission.cards.length} total):\n\n`
+
+      submission.cards.forEach((card, cardIdx) => {
+        text += `Card #${cardIdx + 1}:\n`
+        text += `  Name: ${card.playerName}\n`
+        text += `  Year: ${card.year}\n`
+        if (card.manufacturer) text += `  Manufacturer: ${card.manufacturer}\n`
+        if (card.cardNumber) text += `  Card Number: ${card.cardNumber}\n`
+        text += `  Type: ${card.cardType}`
+        if (card.sport) text += ` - ${card.sport}`
+        text += `\n`
+        text += `  Condition: ${card.estimatedCondition}\n`
+        text += `  Declared Value: $${parseFloat(card.declaredValue).toLocaleString()}\n`
+        text += `\n`
+      })
+
+      const totalValue = submission.cards.reduce(
+        (sum, card) => sum + parseFloat(card.declaredValue),
+        0
+      )
+      text += `TOTAL DECLARED VALUE: $${totalValue.toLocaleString()}\n`
+
+      if (idx < submissions.length - 1) {
+        text += `\n${'='.repeat(50)}\n\n`
+      }
+    })
+
+    text += `\n${'='.repeat(50)}\n\n`
+    text += `SHIPPING CHECKLIST:\n`
+    text += `☐ This form is included in package\n`
+    text += `☐ Cards are placed in card sleeves or top loaders\n`
+    text += `☐ Cards are secured and cannot move during shipping\n`
+    text += `☐ Package is properly sealed and labeled\n`
+    text += `☐ Tracking number obtained for shipment\n`
+    text += `☐ Insurance purchased for declared value\n\n`
+
+    text += `NEXT STEPS:\n`
+    text += `1. You will receive a confirmation email with shipping instructions\n`
+    text += `2. Package your cards securely and ship them to the grading company\n`
+    text += `3. Track your submission status online using your submission ID\n`
+    text += `4. Receive your graded cards back within the estimated turnaround time\n`
+
+    return text
+  }
+
+  /**
+   * Handle print/share - uses native share on mobile, window.print on web
+   */
+  const handlePrint = async () => {
+    if (isNativePlatform()) {
+      // On mobile devices, use the Share API
+      try {
+        const submissionText = generateTextSummary()
+
+        await Share.share({
+          title: 'Card Grading Submission',
+          text: submissionText,
+          dialogTitle: 'Share Submission Details'
+        })
+      } catch (error) {
+        console.error('Share error:', error)
+        // User cancelled or share failed - silently handle
+      }
+    } else {
+      // On web, use the browser's print functionality
+      window.print()
+    }
+  }
 
   return (
     <div className="submission-summary">
@@ -129,8 +220,17 @@ function SubmissionSummary({ submissions, onNewSubmission }) {
 
       <div className="print-notice">
         <p>
-          <strong>📧 For Physical Mail Submission:</strong> Print this page and include it with your cards when shipping to the grading company.
-          Your Submission ID is required for tracking.
+          {isNativePlatform() ? (
+            <>
+              <strong>📧 For Physical Mail Submission:</strong> Share or save this submission details and include a printed copy with your cards when shipping to the grading company.
+              Your Submission ID is required for tracking.
+            </>
+          ) : (
+            <>
+              <strong>📧 For Physical Mail Submission:</strong> Print this page and include it with your cards when shipping to the grading company.
+              Your Submission ID is required for tracking.
+            </>
+          )}
         </p>
       </div>
 
@@ -158,7 +258,7 @@ function SubmissionSummary({ submissions, onNewSubmission }) {
 
       <div className="summary-actions">
         <button onClick={handlePrint} className="print-button">
-          Print Submission
+          {isNativePlatform() ? 'Share Submission' : 'Print Submission'}
         </button>
         <button onClick={onNewSubmission} className="new-submission-button">
           Submit More Cards

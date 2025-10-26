@@ -23,6 +23,28 @@
   max-width: 1200px;
   margin: 0 auto;
   text-align: center;
+  position: relative;
+}
+
+.back-to-home-button {
+  position: absolute;
+  left: 0;
+  background: var(--apple-blue);
+  color: white;
+  border: none;
+  padding: 0.625rem 1.25rem;
+  border-radius: 10px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.back-to-home-button:hover {
+  background: var(--apple-blue-hover);
+  transform: translateX(-2px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .app-header h1 {

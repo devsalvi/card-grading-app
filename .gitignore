@@ -81,3 +81,17 @@ android/.idea/
 android/app/keystore.properties
 *.keystore
 *.jks
+
+# iOS / Capacitor
+ios/App/build/
+ios/App/Pods/
+ios/App/Podfile.lock
+ios/App/*.xcworkspace/xcuserdata/
+ios/App/*.xcodeproj/xcuserdata/
+ios/App/*.xcodeproj/project.xcworkspace/xcuserdata/
+ios/App/App.xcworkspace/
+ios/App/.DS_Store
+*.ipa
+*.mobileprovision
+*.p12
+*.cer
