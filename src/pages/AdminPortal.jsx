@@ -47,7 +47,7 @@ function AdminPortal() {
               ← Back to Home
             </button>
           </div>
-          <Login onLoginSuccess={handleLoginSuccess} />
+          <Login onLoginSuccess={handleLoginSuccess} hideSocialLogin={true} />
         </>
       )}
 

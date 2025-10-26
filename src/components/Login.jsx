@@ -9,7 +9,7 @@ import {
 } from '../services/authService'
 import './Login.css'
 
-function Login({ onLoginSuccess }) {
+function Login({ onLoginSuccess, hideSocialLogin = false }) {
   const [mode, setMode] = useState('signin') // 'signin', 'signup', 'confirm'
   const [formData, setFormData] = useState({
     email: '',
@@ -154,7 +154,7 @@ function Login({ onLoginSuccess }) {
 
         {mode === 'signin' && (
           <form onSubmit={handleSignIn}>
-            {isSocialLoginConfigured() && (
+            {!hideSocialLogin && isSocialLoginConfigured() && (
               <>
                 <div className="social-login-section">
                   <button
