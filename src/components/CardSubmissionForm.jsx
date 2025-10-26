@@ -411,6 +411,7 @@ function CardSubmissionForm({ onSubmit }) {
             <input
               type="file"
               accept="image/*"
+              capture="environment"
               multiple
               onChange={handleImageUpload}
               style={{ display: 'none' }}
