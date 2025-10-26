@@ -31,12 +31,22 @@ const configureAuth = () => {
 
   // Add OAuth configuration if domain is provided (for social login)
   if (domain) {
+    // Use explicit URLs for production, dynamic for local
+    const redirectUrls = window.location.hostname === 'localhost'
+      ? [window.location.origin, `${window.location.origin}/`]
+      : [
+          'https://collectbl.com',
+          'https://collectbl.com/',
+          'https://main.d1xsxgfyygtbif.amplifyapp.com',
+          'https://main.d1xsxgfyygtbif.amplifyapp.com/'
+        ];
+
     config.Auth.Cognito.loginWith = {
       oauth: {
         domain: `${domain}.auth.${import.meta.env.VITE_AWS_REGION || 'us-east-1'}.amazoncognito.com`,
         scopes: ['email', 'openid', 'profile'],
-        redirectSignIn: [window.location.origin, `${window.location.origin}/`],
-        redirectSignOut: [window.location.origin, `${window.location.origin}/`],
+        redirectSignIn: redirectUrls,
+        redirectSignOut: redirectUrls,
         responseType: 'code',
       }
     };
