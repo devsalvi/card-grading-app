@@ -89,6 +89,7 @@ function SocialLoginButton() {
                 </svg>
                 Google
               </button>
+{/* 
               <button
                 className="social-btn facebook-btn"
                 onClick={() => handleSocialLogin('Facebook')}
@@ -99,6 +100,7 @@ function SocialLoginButton() {
                 </svg>
                 Facebook
               </button>
+               */}
             </div>
           </>
         ) : (
