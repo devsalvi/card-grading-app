@@ -653,31 +653,31 @@
 
 /* Print Styles */
 @media print {
-  /* Page setup */
+  /* Page setup - smaller margins for more content */
   @page {
-    margin: 0.75in;
+    margin: 0.5in;
     size: letter;
   }
 
-  /* Show print-only header */
+  /* Show print-only header - compact */
   .print-only-header {
     display: block !important;
     text-align: center;
-    padding-bottom: 1rem;
-    margin-bottom: 1.5rem;
-    border-bottom: 3px solid black;
+    padding-bottom: 0.3rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 2px solid black;
   }
 
   .print-only-header h1 {
-    margin: 0 0 0.5rem 0;
-    font-size: 20pt;
+    margin: 0 0 0.2rem 0;
+    font-size: 14pt;
     font-weight: bold;
     color: black;
   }
 
   .print-date {
     margin: 0;
-    font-size: 10pt;
+    font-size: 8pt;
     color: #333;
   }
 
@@ -687,43 +687,49 @@
     display: none !important;
   }
 
-  /* Make print notice more prominent */
+  /* Make print notice compact */
   .print-notice {
     background: white !important;
-    border: 3px double black !important;
-    padding: 1rem !important;
-    margin-bottom: 1.5rem !important;
+    border: 2px solid black !important;
+    padding: 0.4rem 0.6rem !important;
+    margin-bottom: 0.5rem !important;
     text-align: left !important;
     page-break-inside: avoid;
   }
 
   .print-notice p {
     color: black !important;
-    font-size: 11pt !important;
-    line-height: 1.5;
+    font-size: 8pt !important;
+    line-height: 1.3;
+    margin: 0 !important;
   }
 
-  /* Shipping checklist for printing */
+  /* Shipping checklist - compact */
   .shipping-checklist {
     background: white !important;
-    border: 2px solid black !important;
-    padding: 1rem !important;
-    margin-bottom: 1.5rem !important;
+    border: 1px solid black !important;
+    padding: 0.4rem 0.6rem !important;
+    margin-bottom: 0.5rem !important;
     page-break-inside: avoid;
   }
 
   .shipping-checklist h3 {
     color: black !important;
-    font-size: 12pt !important;
+    font-size: 9pt !important;
     font-weight: bold !important;
-    margin: 0 0 0.75rem 0 !important;
+    margin: 0 0 0.3rem 0 !important;
+  }
+
+  .shipping-checklist ul {
+    margin: 0 !important;
+    padding-left: 1rem !important;
   }
 
   .shipping-checklist li {
     color: black !important;
-    font-size: 10pt !important;
-    line-height: 1.6 !important;
-    margin-bottom: 0.4rem !important;
+    font-size: 7pt !important;
+    line-height: 1.3 !important;
+    margin-bottom: 0.1rem !important;
   }
 
   /* Clean up backgrounds for printing */
@@ -741,28 +747,29 @@
     background: white !important;
     border: 2px solid #333 !important;
     page-break-inside: avoid;
-    margin-bottom: 1.5rem !important;
-    padding: 1.25rem !important;
+    margin-bottom: 0.5rem !important;
+    padding: 0.5rem !important;
   }
 
   .submission-info {
     background: #f9f9f9 !important;
-    border: 2px solid #000 !important;
-    padding: 1rem !important;
+    border: 1px solid #000 !important;
+    padding: 0.4rem !important;
+    margin-bottom: 0.4rem !important;
   }
 
   .submission-info h3 {
     color: black !important;
-    font-size: 16pt !important;
+    font-size: 11pt !important;
     font-weight: bold !important;
-    margin: 0 0 1rem 0 !important;
+    margin: 0 0 0.3rem 0 !important;
     text-decoration: underline;
   }
 
   .submitter-details p {
-    font-size: 11pt !important;
-    margin: 0.4rem 0 !important;
-    line-height: 1.5 !important;
+    font-size: 8pt !important;
+    margin: 0.1rem 0 !important;
+    line-height: 1.3 !important;
   }
 
   .submitter-details strong {
@@ -770,12 +777,12 @@
   }
 
   .cards-header {
-    font-size: 13pt !important;
+    font-size: 10pt !important;
     font-weight: bold !important;
     color: black !important;
-    margin: 1rem 0 0.75rem 0 !important;
-    padding-bottom: 0.5rem !important;
-    border-bottom: 2px solid #333 !important;
+    margin: 0.4rem 0 0.3rem 0 !important;
+    padding-bottom: 0.2rem !important;
+    border-bottom: 1px solid #333 !important;
   }
 
   /* Make submission ID very prominent */
@@ -787,93 +794,96 @@
     font-weight: bold !important;
   }
 
-  /* Cards grid optimized for printing */
+  /* Cards grid optimized for printing - use 2 columns */
   .cards-grid {
-    display: block !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.3rem !important;
   }
 
-  /* Card summaries */
+  /* Card summaries - compact */
   .card-summary {
     background: white !important;
-    border: 2px solid #333 !important;
+    border: 1px solid #333 !important;
     page-break-inside: avoid;
-    margin-bottom: 1rem !important;
+    margin-bottom: 0 !important;
     border-radius: 0 !important;
   }
 
   .card-summary-header {
     background: #333 !important;
     color: white !important;
-    padding: 0.6rem 1rem !important;
+    padding: 0.2rem 0.4rem !important;
   }
 
   .card-summary-header h5 {
-    font-size: 12pt !important;
+    font-size: 8pt !important;
     font-weight: bold !important;
+    margin: 0 !important;
   }
 
   .card-summary-image {
     background: white !important;
-    padding: 0.75rem !important;
+    padding: 0.3rem !important;
     text-align: center !important;
   }
 
   .card-summary-image img {
-    max-width: 180px !important;
-    max-height: 250px !important;
+    max-width: 120px !important;
+    max-height: 160px !important;
     border: 1px solid #ccc !important;
   }
 
-  /* Card details */
+  /* Card details - very compact */
   .card-summary-details {
-    padding: 0.75rem !important;
+    padding: 0.3rem !important;
   }
 
   .card-summary-details .detail-row {
     color: black !important;
-    padding: 0.3rem 0 !important;
-    font-size: 10pt !important;
-    border-bottom: 1px solid #e0e0e0 !important;
+    padding: 0.1rem 0 !important;
+    font-size: 7pt !important;
+    border-bottom: none !important;
   }
 
   .detail-label {
     color: #333 !important;
     font-weight: bold !important;
-    font-size: 10pt !important;
+    font-size: 7pt !important;
   }
 
   .detail-value {
     color: black !important;
-    font-size: 10pt !important;
+    font-size: 7pt !important;
   }
 
   /* Highlight important values */
   .card-summary-details .detail-row.highlight {
     background: #e8e8e8 !important;
-    border: 2px solid #000 !important;
-    padding: 0.5rem !important;
-    margin: 0.3rem 0 !important;
+    border: 1px solid #000 !important;
+    padding: 0.2rem !important;
+    margin: 0.2rem 0 !important;
   }
 
   .card-summary-details .detail-row.highlight .detail-label {
-    font-size: 11pt !important;
+    font-size: 8pt !important;
   }
 
   .card-summary-details .detail-row.highlight .detail-value {
     color: black !important;
     font-weight: bold !important;
-    font-size: 12pt !important;
+    font-size: 9pt !important;
   }
 
   .submission-total {
     background: #e8e8e8 !important;
-    border: 3px double #000 !important;
+    border: 2px solid #000 !important;
     color: black !important;
     font-weight: bold !important;
-    padding: 1rem !important;
-    font-size: 14pt !important;
+    padding: 0.4rem !important;
+    font-size: 10pt !important;
     text-align: center !important;
-    margin-top: 1rem !important;
+    margin-top: 0.4rem !important;
   }
 
   /* Remove shadows */
@@ -888,20 +898,26 @@
     border: 2px solid #333 !important;
   }
 
-  /* Page breaks */
+  /* Page breaks - allow more flexibility */
   .submission-group {
     page-break-before: auto;
-    page-break-after: always;
+    page-break-after: auto;
+    page-break-inside: auto;
   }
 
-  .submission-group:last-child {
-    page-break-after: auto;
+  .submission-info {
+    page-break-after: avoid;
+  }
+
+  .card-summary {
+    page-break-inside: avoid;
   }
 
   /* Optimize text for printing */
   body {
-    font-family: 'Times New Roman', Times, serif !important;
+    font-family: Arial, sans-serif !important;
     color: black !important;
+    font-size: 8pt !important;
   }
 
   /* Better link display for printing */
@@ -909,9 +925,13 @@
     content: none !important;
   }
 
-  /* Ensure images print */
+  /* Ensure images print but keep them small */
   img {
     max-width: 100% !important;
-    page-break-inside: avoid !important;
+  }
+
+  /* Remove extra spacing */
+  * {
+    margin-top: 0 !important;
   }
 }
