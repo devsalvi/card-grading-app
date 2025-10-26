@@ -214,6 +214,11 @@
   transform: scale(0.98);
 }
 
+/* Print-only header - hidden on screen */
+.print-only-header {
+  display: none;
+}
+
 /* Print Notice */
 .print-notice {
   background: linear-gradient(135deg, #fff9e6 0%, #fef3c7 100%);
@@ -234,6 +239,36 @@
 .print-notice strong {
   color: var(--apple-gray-6);
   font-weight: 600;
+}
+
+/* Shipping Checklist */
+.shipping-checklist {
+  background: var(--apple-blue-light);
+  border: 2px solid var(--apple-blue);
+  border-radius: 14px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.shipping-checklist h3 {
+  color: var(--apple-gray-6);
+  font-size: 1.1875rem;
+  margin: 0 0 1rem 0;
+  font-weight: 600;
+}
+
+.shipping-checklist ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.shipping-checklist li {
+  color: #555;
+  font-size: 1rem;
+  line-height: 1.8;
+  margin-bottom: 0.5rem;
+  padding-left: 0.5rem;
 }
 
 /* Multi-Card Submission Styles */
@@ -618,6 +653,34 @@
 
 /* Print Styles */
 @media print {
+  /* Page setup */
+  @page {
+    margin: 0.75in;
+    size: letter;
+  }
+
+  /* Show print-only header */
+  .print-only-header {
+    display: block !important;
+    text-align: center;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 3px solid black;
+  }
+
+  .print-only-header h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 20pt;
+    font-weight: bold;
+    color: black;
+  }
+
+  .print-date {
+    margin: 0;
+    font-size: 10pt;
+    color: #333;
+  }
+
   /* Hide interactive elements */
   .summary-actions,
   .next-steps {
@@ -627,39 +690,92 @@
   /* Make print notice more prominent */
   .print-notice {
     background: white !important;
-    border: 3px solid black !important;
+    border: 3px double black !important;
     padding: 1rem !important;
     margin-bottom: 1.5rem !important;
     text-align: left !important;
+    page-break-inside: avoid;
   }
 
   .print-notice p {
     color: black !important;
+    font-size: 11pt !important;
+    line-height: 1.5;
+  }
+
+  /* Shipping checklist for printing */
+  .shipping-checklist {
+    background: white !important;
+    border: 2px solid black !important;
+    padding: 1rem !important;
+    margin-bottom: 1.5rem !important;
+    page-break-inside: avoid;
+  }
+
+  .shipping-checklist h3 {
+    color: black !important;
     font-size: 12pt !important;
+    font-weight: bold !important;
+    margin: 0 0 0.75rem 0 !important;
+  }
+
+  .shipping-checklist li {
+    color: black !important;
+    font-size: 10pt !important;
+    line-height: 1.6 !important;
+    margin-bottom: 0.4rem !important;
   }
 
   /* Clean up backgrounds for printing */
   .submission-summary {
     box-shadow: none !important;
-    border: 1px solid #ccc !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+
+  .summary-header {
+    display: none !important;
   }
 
   .submission-group {
     background: white !important;
     border: 2px solid #333 !important;
     page-break-inside: avoid;
-    margin-bottom: 2rem !important;
+    margin-bottom: 1.5rem !important;
+    padding: 1.25rem !important;
   }
 
   .submission-info {
-    background: white !important;
-    border: 2px solid #007aff !important;
+    background: #f9f9f9 !important;
+    border: 2px solid #000 !important;
+    padding: 1rem !important;
   }
 
   .submission-info h3 {
     color: black !important;
-    font-size: 14pt !important;
+    font-size: 16pt !important;
     font-weight: bold !important;
+    margin: 0 0 1rem 0 !important;
+    text-decoration: underline;
+  }
+
+  .submitter-details p {
+    font-size: 11pt !important;
+    margin: 0.4rem 0 !important;
+    line-height: 1.5 !important;
+  }
+
+  .submitter-details strong {
+    font-weight: bold !important;
+  }
+
+  .cards-header {
+    font-size: 13pt !important;
+    font-weight: bold !important;
+    color: black !important;
+    margin: 1rem 0 0.75rem 0 !important;
+    padding-bottom: 0.5rem !important;
+    border-bottom: 2px solid #333 !important;
   }
 
   /* Make submission ID very prominent */
@@ -671,53 +787,93 @@
     font-weight: bold !important;
   }
 
+  /* Cards grid optimized for printing */
+  .cards-grid {
+    display: block !important;
+  }
+
   /* Card summaries */
   .card-summary {
     background: white !important;
-    border: 1px solid #333 !important;
+    border: 2px solid #333 !important;
     page-break-inside: avoid;
+    margin-bottom: 1rem !important;
+    border-radius: 0 !important;
   }
 
   .card-summary-header {
     background: #333 !important;
     color: white !important;
+    padding: 0.6rem 1rem !important;
+  }
+
+  .card-summary-header h5 {
+    font-size: 12pt !important;
+    font-weight: bold !important;
   }
 
   .card-summary-image {
     background: white !important;
+    padding: 0.75rem !important;
+    text-align: center !important;
   }
 
-  /* Text colors for printing */
-  .submitter-details p,
+  .card-summary-image img {
+    max-width: 180px !important;
+    max-height: 250px !important;
+    border: 1px solid #ccc !important;
+  }
+
+  /* Card details */
+  .card-summary-details {
+    padding: 0.75rem !important;
+  }
+
   .card-summary-details .detail-row {
     color: black !important;
+    padding: 0.3rem 0 !important;
+    font-size: 10pt !important;
+    border-bottom: 1px solid #e0e0e0 !important;
   }
 
   .detail-label {
     color: #333 !important;
     font-weight: bold !important;
+    font-size: 10pt !important;
   }
 
   .detail-value {
     color: black !important;
+    font-size: 10pt !important;
   }
 
   /* Highlight important values */
   .card-summary-details .detail-row.highlight {
-    background: #f0f0f0 !important;
-    border: 1px solid #333 !important;
+    background: #e8e8e8 !important;
+    border: 2px solid #000 !important;
+    padding: 0.5rem !important;
+    margin: 0.3rem 0 !important;
+  }
+
+  .card-summary-details .detail-row.highlight .detail-label {
+    font-size: 11pt !important;
   }
 
   .card-summary-details .detail-row.highlight .detail-value {
     color: black !important;
     font-weight: bold !important;
+    font-size: 12pt !important;
   }
 
   .submission-total {
-    background: #f0f0f0 !important;
-    border: 2px solid #333 !important;
+    background: #e8e8e8 !important;
+    border: 3px double #000 !important;
     color: black !important;
     font-weight: bold !important;
+    padding: 1rem !important;
+    font-size: 14pt !important;
+    text-align: center !important;
+    margin-top: 1rem !important;
   }
 
   /* Remove shadows */
@@ -740,5 +896,22 @@
 
   .submission-group:last-child {
     page-break-after: auto;
+  }
+
+  /* Optimize text for printing */
+  body {
+    font-family: 'Times New Roman', Times, serif !important;
+    color: black !important;
+  }
+
+  /* Better link display for printing */
+  a[href]:after {
+    content: none !important;
+  }
+
+  /* Ensure images print */
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid !important;
   }
 }

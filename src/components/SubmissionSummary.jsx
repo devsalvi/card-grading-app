@@ -12,8 +12,21 @@ function SubmissionSummary({ submissions, onNewSubmission }) {
     window.print()
   }
 
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+
   return (
     <div className="submission-summary">
+      <div className="print-only-header">
+        <h1>Card Grading Submission Form</h1>
+        <p className="print-date">Printed: {currentDate}</p>
+      </div>
+
       <div className="summary-header">
         <h2>Submission Confirmation</h2>
         <p className="success-message">
@@ -119,6 +132,18 @@ function SubmissionSummary({ submissions, onNewSubmission }) {
           <strong>📧 For Physical Mail Submission:</strong> Print this page and include it with your cards when shipping to the grading company.
           Your Submission ID is required for tracking.
         </p>
+      </div>
+
+      <div className="shipping-checklist">
+        <h3>Shipping Checklist (Please Check Before Mailing):</h3>
+        <ul>
+          <li>☐ This printed submission form is included in package</li>
+          <li>☐ Cards are placed in card sleeves or top loaders</li>
+          <li>☐ Cards are secured and cannot move during shipping</li>
+          <li>☐ Package is properly sealed and labeled</li>
+          <li>☐ Tracking number obtained for shipment</li>
+          <li>☐ Insurance purchased for declared value</li>
+        </ul>
       </div>
 
       <div className="next-steps">
