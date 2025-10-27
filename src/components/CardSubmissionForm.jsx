@@ -174,8 +174,8 @@ function CardSubmissionForm({ onSubmit }) {
   }
 
   /**
-   * Analyze all uploaded cards using backend API (Google Gemini)
-   * Each card is analyzed separately in parallel
+   * Analyze all uploaded images using backend API (Google Gemini)
+   * Each image may contain 1-10 cards which are detected separately
    */
   const analyzeAllCards = async () => {
     if (cards.length === 0) return
@@ -183,42 +183,65 @@ function CardSubmissionForm({ onSubmit }) {
     setAnalyzing(true)
 
     try {
-      // Analyze all cards in parallel using backend API
+      // Analyze all images in parallel using backend API
       const analysisPromises = cards.map(async (card, index) => {
         try {
           // Convert image to base64
           const base64Image = await urlToBase64(card.image)
 
-          console.log(`Analyzing card ${index + 1} via backend API...`)
-          const cardData = await analyzeCardWithGemini(base64Image)
+          console.log(`Analyzing image ${index + 1} via backend API...`)
+          const responseData = await analyzeCardWithGemini(base64Image)
 
-          return { index, cardData, success: true }
+          // responseData now has format: { cards: [...] }
+          const detectedCards = responseData.cards || []
+
+          console.log(`Image ${index + 1}: Detected ${detectedCards.length} card(s)`)
+
+          return { index, detectedCards, originalImage: card.image, originalFile: card.imageFile, success: true }
         } catch (error) {
-          console.error(`Failed to analyze card ${index + 1}:`, error)
+          console.error(`Failed to analyze image ${index + 1}:`, error)
           return { index, error: error.message, success: false }
         }
       })
 
       const results = await Promise.all(analysisPromises)
 
-      // Update cards with analysis results
-      setCards(prev => prev.map((card, i) => {
-        const result = results[i]
-        if (result.success) {
-          const updatedCard = {
-            ...card,
-            ...result.cardData
-          }
-          // Calculate estimated value
-          const estimatedVal = calculateEstimatedValueSync(result.cardData)
-          if (estimatedVal) {
-            updatedCard.declaredValue = estimatedVal.average.toString()
-            updatedCard.estimatedValue = estimatedVal
-          }
-          return updatedCard
+      // Build new cards array: for each image, create card entries for all detected cards
+      const newCards = []
+      let totalCardsDetected = 0
+
+      results.forEach((result, imageIndex) => {
+        if (result.success && result.detectedCards.length > 0) {
+          // Create a card entry for each detected card in this image
+          result.detectedCards.forEach((detectedCard, cardIndex) => {
+            const estimatedVal = calculateEstimatedValueSync(detectedCard)
+
+            newCards.push({
+              image: result.originalImage,
+              imageFile: result.originalFile,
+              cardType: detectedCard.cardType || '',
+              sport: detectedCard.sport || '',
+              playerName: detectedCard.playerName || '',
+              year: detectedCard.year || '',
+              manufacturer: detectedCard.manufacturer || '',
+              cardNumber: detectedCard.cardNumber || '',
+              estimatedCondition: detectedCard.estimatedCondition || '',
+              declaredValue: estimatedVal ? estimatedVal.average.toString() : '',
+              estimatedValue: estimatedVal,
+              // Track which image this came from and card number within that image
+              sourceImageIndex: imageIndex,
+              detectedCardNumber: cardIndex + 1,
+              totalCardsInImage: result.detectedCards.length
+            })
+            totalCardsDetected++
+          })
+        } else {
+          // If analysis failed, keep the original card entry
+          newCards.push(cards[imageIndex])
         }
-        return card
-      }))
+      })
+
+      setCards(newCards)
 
       // Show success notification
       setAutoFilled(true)
@@ -226,8 +249,12 @@ function CardSubmissionForm({ onSubmit }) {
 
       // Check if any failed
       const failedCount = results.filter(r => !r.success).length
-      if (failedCount > 0) {
-        alert(`Successfully analyzed ${cards.length - failedCount} of ${cards.length} cards.\n${failedCount} card(s) failed - please fill in details manually.`)
+      const successCount = results.filter(r => r.success).length
+
+      if (totalCardsDetected > cards.length) {
+        alert(`Success! Detected ${totalCardsDetected} card(s) across ${successCount} image(s).\nMultiple cards were found in some images and have been separated for individual grading.`)
+      } else if (failedCount > 0) {
+        alert(`Successfully analyzed ${successCount} of ${results.length} image(s).\n${failedCount} image(s) failed - please fill in details manually.`)
       }
 
     } catch (error) {
@@ -517,7 +544,14 @@ function CardSubmissionForm({ onSubmit }) {
       {cards.map((card, index) => (
         <div key={index} className="card-section">
           <div className="card-section-header">
-            <h3>Card #{index + 1}</h3>
+            <h3>
+              Card #{index + 1}
+              {card.totalCardsInImage && card.totalCardsInImage > 1 && (
+                <span className="multi-card-badge">
+                  {' '}({card.detectedCardNumber} of {card.totalCardsInImage} detected in this image)
+                </span>
+              )}
+            </h3>
             <button
               type="button"
               className="remove-card-button"

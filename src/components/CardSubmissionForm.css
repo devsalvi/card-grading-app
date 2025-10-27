@@ -451,6 +451,17 @@
   letter-spacing: -0.02em;
 }
 
+.multi-card-badge {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--apple-blue);
+  background: rgba(0, 122, 255, 0.1);
+  padding: 0.25rem 0.625rem;
+  border-radius: 8px;
+  margin-left: 0.5rem;
+  white-space: nowrap;
+}
+
 .remove-card-button {
   background: var(--apple-red);
   color: white;

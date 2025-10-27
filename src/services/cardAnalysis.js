@@ -61,12 +61,16 @@ export async function analyzeCardWithGemini(base64Image) {
  */
 export function getMockCardData() {
   return {
-    playerName: 'Michael Jordan',
-    year: '1986',
-    manufacturer: 'Fleer',
-    cardNumber: '#57',
-    cardType: 'Sports',
-    sport: 'Basketball',
-    estimatedCondition: 'Near Mint'
+    cards: [
+      {
+        playerName: 'Michael Jordan',
+        year: '1986',
+        manufacturer: 'Fleer',
+        cardNumber: '#57',
+        cardType: 'Sports',
+        sport: 'Basketball',
+        estimatedCondition: 'Near Mint'
+      }
+    ]
   };
 }

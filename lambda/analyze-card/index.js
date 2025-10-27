@@ -103,27 +103,35 @@ async function analyzeCardWithGemini(base64Image) {
   // Use Gemini 2.5 Flash for fast, cost-effective vision analysis
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-preview-05-20' });
 
-  // Create the prompt for card analysis
-  const prompt = `Analyze this trading card or sports card image and extract the following information in JSON format:
+  // Create the prompt for card analysis - supports detecting multiple cards (up to 10)
+  const prompt = `Analyze this image for trading cards or sports cards. The image may contain 1-10 cards. Detect ALL visible cards and extract information for each one.
 
+Return a JSON object with this exact format:
 {
-  "playerName": "The name of the player, character, or subject on the card",
-  "year": "The year the card was produced or the set date",
-  "manufacturer": "The brand/company that made the card (e.g., Topps, Fleer, Panini, Upper Deck, Pokemon Company, Wizards of the Coast, Konami)",
-  "cardNumber": "The card number if visible",
-  "cardType": "The type of card: 'Sports', 'Trading Card Game (TCG)', or 'Other'",
-  "sport": "The sport or game (Baseball, Basketball, Football, Hockey, Soccer, Pokemon, Magic: The Gathering, Yu-Gi-Oh!, or Other)",
-  "estimatedCondition": "Estimated condition based on visible wear: 'Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', or 'Poor'"
+  "cards": [
+    {
+      "playerName": "The name of the player, character, or subject on the card",
+      "year": "The year the card was produced or the set date",
+      "manufacturer": "The brand/company that made the card (e.g., Topps, Fleer, Panini, Upper Deck, Pokemon Company, Wizards of the Coast, Konami)",
+      "cardNumber": "The card number if visible",
+      "cardType": "The type of card: 'Sports', 'Trading Card Game (TCG)', or 'Other'",
+      "sport": "The sport or game (Baseball, Basketball, Football, Hockey, Soccer, Pokemon, Magic: The Gathering, Yu-Gi-Oh!, or Other)",
+      "estimatedCondition": "Estimated condition based on visible wear: 'Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', or 'Poor'"
+    }
+  ]
 }
 
-Important:
+Important instructions:
+- If the image contains MULTIPLE cards (up to 10), analyze each card separately and include all in the "cards" array
+- If the image contains ONLY ONE card, still return the "cards" array with one object
+- Analyze each visible card carefully and extract details for each
 - If this is a Pokemon card, cardType should be "Trading Card Game (TCG)" and sport should be "Pokemon"
 - If this is a Magic: The Gathering card, cardType should be "Trading Card Game (TCG)" and sport should be "Magic: The Gathering"
 - If this is a Yu-Gi-Oh! card, cardType should be "Trading Card Game (TCG)" and sport should be "Yu-Gi-Oh!"
 - If it's a sports card (baseball, basketball, etc.), cardType should be "Sports"
-- Look carefully at any text, logos, and branding visible on the card
+- Look carefully at any text, logos, and branding visible on each card
 - For year, extract the copyright year or set year visible on the card
-- Return ONLY valid JSON, no additional text or explanation`;
+- Return ONLY valid JSON in the format shown above, no additional text or explanation`;
 
   // Prepare the image data
   // Remove data URI prefix if present (e.g., "data:image/png;base64,")
@@ -156,34 +164,41 @@ Important:
   console.log('Gemini raw response:', text);
 
   // Extract JSON from the response
-  let cardData;
+  let responseData;
   try {
     // Try to parse the response as JSON
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      cardData = JSON.parse(jsonMatch[0]);
+      responseData = JSON.parse(jsonMatch[0]);
     } else {
       throw new Error('No JSON found in response');
     }
   } catch (parseError) {
     console.error('Failed to parse Gemini response as JSON:', parseError);
     // Fallback to extracting information from text
-    cardData = parseTextResponse(text);
+    const singleCard = parseTextResponse(text);
+    responseData = { cards: [singleCard] };
   }
 
-  // Ensure all required fields are present
-  cardData = {
-    playerName: cardData.playerName || 'Unknown Player',
-    year: cardData.year || new Date().getFullYear().toString(),
-    manufacturer: cardData.manufacturer || 'Unknown',
-    cardNumber: cardData.cardNumber || '',
-    cardType: cardData.cardType || 'Other',
-    sport: cardData.sport || 'Other',
-    estimatedCondition: cardData.estimatedCondition || 'Very Good'
-  };
+  // Ensure response has cards array
+  if (!responseData.cards || !Array.isArray(responseData.cards)) {
+    // If single card object was returned, convert to array format
+    responseData = { cards: [responseData] };
+  }
 
-  console.log('Extracted card data:', cardData);
-  return cardData;
+  // Ensure all cards have required fields
+  const cards = responseData.cards.map(card => ({
+    playerName: card.playerName || 'Unknown Player',
+    year: card.year || new Date().getFullYear().toString(),
+    manufacturer: card.manufacturer || 'Unknown',
+    cardNumber: card.cardNumber || '',
+    cardType: card.cardType || 'Other',
+    sport: card.sport || 'Other',
+    estimatedCondition: card.estimatedCondition || 'Very Good'
+  }));
+
+  console.log(`Extracted ${cards.length} card(s):`, cards);
+  return { cards };
 }
 
 /**
@@ -229,13 +244,17 @@ exports.handler = async (event) => {
         body: JSON.stringify({
           success: true,
           data: {
-            playerName: 'Michael Jordan',
-            year: '1986',
-            manufacturer: 'Fleer',
-            cardNumber: '#57',
-            cardType: 'Sports',
-            sport: 'Basketball',
-            estimatedCondition: 'Near Mint'
+            cards: [
+              {
+                playerName: 'Michael Jordan',
+                year: '1986',
+                manufacturer: 'Fleer',
+                cardNumber: '#57',
+                cardType: 'Sports',
+                sport: 'Basketball',
+                estimatedCondition: 'Near Mint'
+              }
+            ]
           },
           mock: true,
           message: 'Using mock data - Gemini API key not configured'
