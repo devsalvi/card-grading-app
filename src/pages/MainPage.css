@@ -75,7 +75,56 @@
   max-width: 980px;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 0;
+}
+
+/* Tabs */
+.tabs-container {
+  background: white;
+  border-radius: 18px 18px 0 0;
+  padding: 1.5rem 2rem 0 2rem;
+  border: 1px solid var(--apple-gray-3);
+  border-bottom: none;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--apple-gray-3);
+}
+
+.tab {
+  background: transparent;
+  border: none;
+  padding: 0.875rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--apple-gray-5);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+  position: relative;
+  bottom: -1px;
+}
+
+.tab:hover {
+  color: var(--apple-gray-6);
+  background: rgba(0, 122, 255, 0.05);
+  border-radius: 8px 8px 0 0;
+}
+
+.tab.active {
+  color: var(--apple-blue);
+  border-bottom-color: var(--apple-blue);
+  font-weight: 600;
+}
+
+.tab-content {
+  background: white;
+  border-radius: 0 0 18px 18px;
+  border: 1px solid var(--apple-gray-3);
+  border-top: none;
+  min-height: 400px;
 }
 
 .app-footer {
@@ -115,6 +164,20 @@
   .app-footer {
     padding: 1.2rem;
   }
+
+  .tabs-container {
+    padding: 1rem 1rem 0 1rem;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .tab {
+    padding: 0.75rem 1rem;
+    font-size: 0.9375rem;
+  }
+
+  .tab-content {
+    border-radius: 0 0 12px 12px;
+  }
 }
 
 /* Mobile */
@@ -145,6 +208,24 @@
 
   .app-footer p {
     font-size: 0.8125rem;
+  }
+
+  .tabs-container {
+    padding: 0.75rem 0.75rem 0 0.75rem;
+    border-radius: 10px 10px 0 0;
+  }
+
+  .tabs {
+    gap: 0.25rem;
+  }
+
+  .tab {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+  }
+
+  .tab-content {
+    border-radius: 0 0 10px 10px;
   }
 }
 

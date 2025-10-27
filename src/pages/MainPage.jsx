@@ -9,6 +9,7 @@ import './MainPage.css'
 function MainPage() {
   const [submissions, setSubmissions] = useState([])
   const [showSummary, setShowSummary] = useState(false)
+  const [activeTab, setActiveTab] = useState('submit') // 'submit' or 'history'
   const navigate = useNavigate()
 
   const handleSubmission = (submissionData) => {
@@ -22,6 +23,11 @@ function MainPage() {
 
   const handleBackToHome = () => {
     navigate('/')
+  }
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab)
+    setShowSummary(false) // Reset summary when switching tabs
   }
 
   return (
@@ -42,17 +48,43 @@ function MainPage() {
 
       <main className="app-main">
         <div className="main-content-container">
-          {!showSummary ? (
-            <>
+          {/* Tab Navigation */}
+          <div className="tabs-container">
+            <div className="tabs">
+              <button
+                className={`tab ${activeTab === 'submit' ? 'active' : ''}`}
+                onClick={() => handleTabChange('submit')}
+              >
+                Submit Cards
+              </button>
+              <button
+                className={`tab ${activeTab === 'history' ? 'active' : ''}`}
+                onClick={() => handleTabChange('history')}
+              >
+                My History
+              </button>
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          <div className="tab-content">
+            {activeTab === 'submit' && (
+              <>
+                {!showSummary ? (
+                  <CardSubmissionForm onSubmit={handleSubmission} />
+                ) : (
+                  <SubmissionSummary
+                    submissions={submissions}
+                    onNewSubmission={handleNewSubmission}
+                  />
+                )}
+              </>
+            )}
+
+            {activeTab === 'history' && (
               <MySubmissions />
-              <CardSubmissionForm onSubmit={handleSubmission} />
-            </>
-          ) : (
-            <SubmissionSummary
-              submissions={submissions}
-              onNewSubmission={handleNewSubmission}
-            />
-          )}
+            )}
+          </div>
         </div>
       </main>
 
