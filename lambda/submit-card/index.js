@@ -1,20 +1,81 @@
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, PutCommand, GetCommand } = require('@aws-sdk/lib-dynamodb');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const crypto = require('crypto');
 
 // Initialize DynamoDB client
-const client = new DynamoDBClient({});
-const docClient = DynamoDBDocumentClient.from(client, {
+const dynamoClient = new DynamoDBClient({});
+const docClient = DynamoDBDocumentClient.from(dynamoClient, {
   marshallOptions: {
     removeUndefinedValues: true, // Remove undefined values from the object
     convertEmptyValues: false,
   },
 });
 
+// Initialize S3 client
+const s3Client = new S3Client({});
+
 const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME || 'CardGradingSubmissions';
+const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME;
+
+/**
+ * Upload image to S3
+ * @param {string} base64Image - Base64 encoded image
+ * @param {string} submissionId - Submission ID
+ * @param {number} cardIndex - Index of the card
+ * @returns {Promise<string>} S3 URL of uploaded image
+ */
+async function uploadImageToS3(base64Image, submissionId, cardIndex) {
+  if (!S3_BUCKET_NAME) {
+    throw new Error('S3_BUCKET_NAME environment variable not set');
+  }
+
+  // Remove data URI prefix if present
+  let imageData = base64Image;
+  let mimeType = 'image/jpeg';
+
+  if (base64Image.startsWith('data:')) {
+    const match = base64Image.match(/^data:(image\/[a-zA-Z]+);base64,(.+)$/);
+    if (match) {
+      mimeType = match[1];
+      imageData = match[2];
+    }
+  }
+
+  // Convert base64 to buffer
+  const imageBuffer = Buffer.from(imageData, 'base64');
+
+  // Generate unique filename
+  const fileExtension = mimeType.split('/')[1] || 'jpg';
+  const timestamp = Date.now();
+  const randomHash = crypto.randomBytes(8).toString('hex');
+  const fileName = `submissions/${submissionId}/card-${cardIndex}-${timestamp}-${randomHash}.${fileExtension}`;
+
+  // Upload to S3
+  const uploadCommand = new PutObjectCommand({
+    Bucket: S3_BUCKET_NAME,
+    Key: fileName,
+    Body: imageBuffer,
+    ContentType: mimeType,
+    Metadata: {
+      submissionId: submissionId.toString(),
+      cardIndex: cardIndex.toString(),
+      uploadedAt: new Date().toISOString()
+    }
+  });
+
+  await s3Client.send(uploadCommand);
+
+  // Return S3 URL
+  const s3Url = `https://${S3_BUCKET_NAME}.s3.amazonaws.com/${fileName}`;
+  console.log(`Uploaded image to S3: ${s3Url}`);
+
+  return s3Url;
+}
 
 /**
  * Lambda handler for card grading submissions
- * Saves submission data to DynamoDB
+ * Saves submission data to DynamoDB and uploads images to S3
  */
 exports.handler = async (event) => {
   console.log('Received event:', JSON.stringify(event, null, 2));
@@ -61,6 +122,47 @@ exports.handler = async (event) => {
       };
     }
 
+    // Upload images to S3 and prepare cards array with S3 URLs
+    console.log(`Processing ${body.cards.length} cards for submission ${body.submissionId}`);
+
+    const cardsWithImages = await Promise.all(
+      body.cards.map(async (card, index) => {
+        let imageUrl = undefined;
+        let imageMetadata = undefined;
+
+        // Upload image to S3 if provided
+        if (card.imageData) {
+          try {
+            imageUrl = await uploadImageToS3(card.imageData, body.submissionId, index);
+
+            // Store AI analysis metadata if available
+            imageMetadata = {
+              detectedCardNumber: card.detectedCardNumber || undefined,
+              totalCardsInImage: card.totalCardsInImage || undefined,
+              aiAnalyzed: card.aiAnalyzed || false,
+              analyzedAt: card.analyzedAt || undefined
+            };
+          } catch (uploadError) {
+            console.error(`Failed to upload image for card ${index}:`, uploadError);
+            // Continue without image - don't fail entire submission
+          }
+        }
+
+        return {
+          cardType: card.cardType,
+          sport: card.sport || undefined,
+          playerName: card.playerName,
+          year: card.year,
+          manufacturer: card.manufacturer || undefined,
+          cardNumber: card.cardNumber || undefined,
+          estimatedCondition: card.estimatedCondition,
+          declaredValue: card.declaredValue,
+          imageUrl,
+          imageMetadata
+        };
+      })
+    );
+
     // Prepare DynamoDB item
     const item = {
       submissionId: body.submissionId.toString(),
@@ -73,19 +175,8 @@ exports.handler = async (event) => {
       address: body.address || undefined,
       specialInstructions: body.specialInstructions || undefined,
 
-      // Cards array (storing card details)
-      cards: body.cards.map(card => ({
-        cardType: card.cardType,
-        sport: card.sport || undefined,
-        playerName: card.playerName,
-        year: card.year,
-        manufacturer: card.manufacturer || undefined,
-        cardNumber: card.cardNumber || undefined,
-        estimatedCondition: card.estimatedCondition,
-        declaredValue: card.declaredValue,
-        // Note: Not storing base64 image data to save storage costs
-        // Store image URLs if uploaded to S3 instead
-      })),
+      // Cards array with S3 image URLs and AI metadata
+      cards: cardsWithImages,
 
       // Metadata
       submittedAt: new Date().toISOString(),

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import CardSubmissionForm from '../components/CardSubmissionForm'
 import SubmissionSummary from '../components/SubmissionSummary'
 import SocialLoginButton from '../components/SocialLoginButton'
+import MySubmissions from '../components/MySubmissions'
 import './MainPage.css'
 
 function MainPage() {
@@ -40,14 +41,19 @@ function MainPage() {
       <SocialLoginButton />
 
       <main className="app-main">
-        {!showSummary ? (
-          <CardSubmissionForm onSubmit={handleSubmission} />
-        ) : (
-          <SubmissionSummary
-            submissions={submissions}
-            onNewSubmission={handleNewSubmission}
-          />
-        )}
+        <div className="main-content-container">
+          {!showSummary ? (
+            <>
+              <MySubmissions />
+              <CardSubmissionForm onSubmit={handleSubmission} />
+            </>
+          ) : (
+            <SubmissionSummary
+              submissions={submissions}
+              onNewSubmission={handleNewSubmission}
+            />
+          )}
+        </div>
       </main>
 
       <footer className="app-footer">

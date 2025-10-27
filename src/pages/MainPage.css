@@ -70,6 +70,14 @@
   align-items: flex-start;
 }
 
+.main-content-container {
+  width: 100%;
+  max-width: 980px;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
 .app-footer {
   background: white;
   border-top: 1px solid var(--apple-gray-3);

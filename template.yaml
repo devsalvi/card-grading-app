@@ -10,6 +10,7 @@ Globals:
     Environment:
       Variables:
         DYNAMODB_TABLE_NAME: !Ref CardGradingSubmissionsTable
+        S3_BUCKET_NAME: !Ref CardImagesS3Bucket
 
 Resources:
   # IAM Role for post-confirmation Lambda to add users to groups
@@ -251,6 +252,40 @@ Resources:
         - Key: Environment
           Value: Production
 
+  # S3 Bucket for Card Images
+  CardImagesS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'card-grading-images-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldImages
+            Status: Enabled
+            ExpirationInDays: 90
+            NoncurrentVersionExpirationInDays: 30
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins:
+              - '*'
+            AllowedMethods:
+              - GET
+              - PUT
+            AllowedHeaders:
+              - '*'
+            MaxAge: 3000
+      Tags:
+        - Key: Application
+          Value: CardGradingApp
+        - Key: Environment
+          Value: Production
+
   # Lambda Function for Submissions
   SubmitCardFunction:
     Type: AWS::Serverless::Function
@@ -259,9 +294,13 @@ Resources:
       CodeUri: lambda/submit-card/
       Handler: index.handler
       Description: 'Handles card grading submissions and saves to DynamoDB'
+      Timeout: 60
+      MemorySize: 512
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref CardGradingSubmissionsTable
+        - S3CrudPolicy:
+            BucketName: !Ref CardImagesS3Bucket
       Events:
         SubmitCard:
           Type: Api
@@ -354,6 +393,27 @@ Resources:
             Method: POST
             RestApiId: !Ref CardGradingAPI
 
+  # Lambda Function for User Operations - Get My Submissions
+  UserGetMySubmissionsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: CardGradingUserGetMySubmissions
+      CodeUri: lambda/user-operations/
+      Handler: index.getMySubmissions
+      Description: 'User function to get their own submissions (last 10)'
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref CardGradingSubmissionsTable
+      Events:
+        GetMySubmissions:
+          Type: Api
+          Properties:
+            Path: /my-submissions
+            Method: GET
+            RestApiId: !Ref CardGradingAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
+
   # API Gateway
   CardGradingAPI:
     Type: AWS::Serverless::Api
@@ -419,3 +479,9 @@ Outputs:
     Value: !Sub 'https://card-grading-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com'
     Export:
       Name: CardGradingHostedUIUrl
+
+  S3BucketName:
+    Description: 'S3 Bucket for Card Images'
+    Value: !Ref CardImagesS3Bucket
+    Export:
+      Name: CardGradingImagesBucketName

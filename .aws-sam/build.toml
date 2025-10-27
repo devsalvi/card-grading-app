@@ -36,4 +36,13 @@ manifest_hash = ""
 packagetype = "Zip"
 functions = ["AnalyzeCardFunction"]
 
+[function_build_definitions.f60e1208-573c-46d3-91c8-46a79fc689e5]
+codeuri = "/Users/dev/development/claude-projects/card-grading-app/lambda/user-operations"
+runtime = "nodejs18.x"
+architecture = "x86_64"
+handler = "index.getMySubmissions"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["UserGetMySubmissionsFunction"]
+
 [layer_build_definitions]

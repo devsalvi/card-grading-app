@@ -405,42 +405,81 @@ function CardSubmissionForm({ onSubmit }) {
       return
     }
 
-    // Combine submitter info with all cards for submission
-    const submission = {
-      ...submitterInfo,
-      cards: cards.map(card => ({
-        image: card.image,
-        cardType: card.cardType,
-        sport: card.sport,
-        playerName: card.playerName,
-        year: card.year,
-        manufacturer: card.manufacturer,
-        cardNumber: card.cardNumber,
-        estimatedCondition: card.estimatedCondition,
-        declaredValue: card.declaredValue
-      })),
-      submissionId: Date.now()
+    // Show loading state
+    const submitButton = e.target.querySelector('button[type="submit"]')
+    if (submitButton) {
+      submitButton.disabled = true
+      submitButton.textContent = 'Uploading images and submitting...'
     }
 
-    // Save to DynamoDB via API
     try {
-      // Show loading state
-      const submitButton = e.target.querySelector('button[type="submit"]')
-      if (submitButton) {
-        submitButton.disabled = true
-        submitButton.textContent = 'Submitting...'
+      // Convert images to base64 for backend upload
+      const cardsWithBase64 = await Promise.all(
+        cards.map(async (card) => {
+          let imageData = null
+
+          // Convert image URL to base64 if image exists
+          if (card.image) {
+            try {
+              imageData = await urlToBase64(card.image)
+            } catch (error) {
+              console.error('Failed to convert image to base64:', error)
+              // Continue without image data
+            }
+          }
+
+          return {
+            imageData, // Base64 encoded image for S3 upload
+            cardType: card.cardType,
+            sport: card.sport,
+            playerName: card.playerName,
+            year: card.year,
+            manufacturer: card.manufacturer,
+            cardNumber: card.cardNumber,
+            estimatedCondition: card.estimatedCondition,
+            declaredValue: card.declaredValue,
+            // Include AI analysis metadata
+            detectedCardNumber: card.detectedCardNumber,
+            totalCardsInImage: card.totalCardsInImage,
+            aiAnalyzed: !!(card.detectedCardNumber || card.totalCardsInImage),
+            analyzedAt: card.estimatedValue ? new Date().toISOString() : undefined
+          }
+        })
+      )
+
+      // Combine submitter info with all cards for submission
+      const submission = {
+        ...submitterInfo,
+        cards: cardsWithBase64,
+        submissionId: Date.now()
       }
 
+      // Save to DynamoDB via API (also uploads images to S3)
       await submitCardGrading(submission)
 
-      // If API call succeeds, show the summary
-      onSubmit(submission)
+      // If API call succeeds, show the summary (with local blob URLs for display)
+      const displaySubmission = {
+        ...submitterInfo,
+        cards: cards.map(card => ({
+          image: card.image, // Keep blob URL for display
+          cardType: card.cardType,
+          sport: card.sport,
+          playerName: card.playerName,
+          year: card.year,
+          manufacturer: card.manufacturer,
+          cardNumber: card.cardNumber,
+          estimatedCondition: card.estimatedCondition,
+          declaredValue: card.declaredValue
+        })),
+        submissionId: submission.submissionId
+      }
+
+      onSubmit(displaySubmission)
     } catch (error) {
       console.error('Submission error:', error)
       alert(`Failed to submit: ${error.message}\n\nYour submission was not saved. Please try again.`)
 
       // Re-enable submit button
-      const submitButton = e.target.querySelector('button[type="submit"]')
       if (submitButton) {
         submitButton.disabled = false
         submitButton.textContent = 'Submit for Grading'

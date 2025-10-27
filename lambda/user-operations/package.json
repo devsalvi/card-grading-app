@@ -1,7 +1,7 @@
 {
-  "name": "submit-card-lambda",
+  "name": "user-operations-lambda",
   "version": "1.0.0",
-  "description": "Lambda function to save card grading submissions to DynamoDB",
+  "description": "Lambda functions for user operations (get my submissions)",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -9,13 +9,12 @@
   "keywords": [
     "lambda",
     "dynamodb",
-    "card-grading"
+    "user"
   ],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.705.0",
-    "@aws-sdk/client-s3": "^3.705.0",
     "@aws-sdk/lib-dynamodb": "^3.705.0"
   }
 }
