@@ -765,6 +765,82 @@
   color: #6b7280;
 }
 
+/* Service Tier Selection */
+.service-tier-selection {
+  display: grid;
+  gap: 1rem;
+}
+
+.service-tier-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--apple-gray-3);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.service-tier-option:hover {
+  border-color: var(--apple-blue);
+  background: var(--apple-blue-light);
+}
+
+.service-tier-option input[type="radio"] {
+  margin-top: 0.25rem;
+}
+
+.service-tier-option input[type="radio"]:checked ~ .service-tier-details {
+  color: var(--apple-blue);
+}
+
+.service-tier-option input[type="radio"]:checked ~ .service-tier-details .tier-header strong {
+  color: var(--apple-blue);
+}
+
+.service-tier-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tier-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tier-header strong {
+  font-size: 1rem;
+  color: #1f2937;
+}
+
+.tier-price {
+  font-weight: 600;
+  color: #059669;
+  font-size: 0.9375rem;
+}
+
+.tier-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tier-turnaround {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.tier-description {
+  font-size: 0.8125rem;
+  color: #9ca3af;
+  font-style: italic;
+}
+
 /* Error Styling */
 .error {
   color: #ef4444;
@@ -998,6 +1074,45 @@
 
   .company-details span {
     font-size: 0.9rem;
+  }
+
+  /* Service tier selection */
+  .service-tier-selection {
+    gap: 1rem;
+  }
+
+  .service-tier-option {
+    padding: 1rem;
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .service-tier-option input[type="radio"] {
+    min-width: 20px;
+    min-height: 20px;
+    margin-top: 0.2rem;
+  }
+
+  .tier-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .tier-header strong {
+    font-size: 1rem;
+  }
+
+  .tier-price {
+    font-size: 0.9rem;
+  }
+
+  .tier-turnaround {
+    font-size: 0.9rem;
+  }
+
+  .tier-description {
+    font-size: 0.85rem;
   }
 
   /* Form grid */

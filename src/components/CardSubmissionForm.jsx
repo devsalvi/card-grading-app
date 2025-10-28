@@ -14,6 +14,39 @@ const GRADING_COMPANIES = [
   { id: 'cgc', name: 'CGC (Certified Guaranty Company)', turnaround: '20-40 days', price: '$18-$125' }
 ]
 
+// Service tiers for each grading company
+const SERVICE_TIERS = {
+  psa: [
+    { id: 'walkthrough', name: 'Walk-through', turnaround: '2 business days', price: '$600/card', description: 'Fastest service' },
+    { id: 'super_express', name: 'Super Express', turnaround: '3 business days', price: '$300/card', description: 'Express service' },
+    { id: 'express', name: 'Express', turnaround: '5 business days', price: '$150/card', description: 'Quick turnaround' },
+    { id: 'regular', name: 'Regular', turnaround: '15 business days', price: '$75/card', description: 'Standard service' },
+    { id: 'value', name: 'Value', turnaround: '30 business days', price: '$25/card', description: 'Economy option' },
+    { id: 'bulk', name: 'Bulk', turnaround: '45+ business days', price: '$20/card', description: 'Bulk submissions (20+ cards)' }
+  ],
+  bgs: [
+    { id: 'premium', name: 'Premium', turnaround: '5 business days', price: '$200/card', description: 'Fastest service' },
+    { id: 'express', name: 'Express', turnaround: '10 business days', price: '$100/card', description: 'Express service' },
+    { id: 'standard', name: 'Standard', turnaround: '30 business days', price: '$50/card', description: 'Standard service' },
+    { id: 'economy', name: 'Economy', turnaround: '60 business days', price: '$25/card', description: 'Budget option' }
+  ],
+  sgc: [
+    { id: 'walkthrough', name: 'Walk-through', turnaround: '1 business day', price: '$500/card', description: 'Same day service' },
+    { id: 'next_day', name: 'Next Day', turnaround: '2 business days', price: '$250/card', description: 'Next business day' },
+    { id: '2_day', name: '2-Day', turnaround: '2 business days', price: '$100/card', description: 'Two day service' },
+    { id: '5_day', name: '5-Day', turnaround: '5 business days', price: '$50/card', description: 'Five day service' },
+    { id: '10_day', name: '10-Day', turnaround: '10 business days', price: '$30/card', description: 'Ten day service' },
+    { id: '20_day', name: '20-Day', turnaround: '20 business days', price: '$20/card', description: 'Twenty day service' },
+    { id: 'bulk', name: 'Bulk', turnaround: '30+ business days', price: '$15/card', description: 'Bulk submissions' }
+  ],
+  cgc: [
+    { id: 'walkthrough', name: 'Walk-through', turnaround: '3 business days', price: '$400/card', description: 'Fastest service' },
+    { id: 'express', name: 'Express', turnaround: '7 business days', price: '$150/card', description: 'Express service' },
+    { id: 'standard', name: 'Standard', turnaround: '20 business days', price: '$50/card', description: 'Standard service' },
+    { id: 'economy', name: 'Economy', turnaround: '40 business days', price: '$25/card', description: 'Budget option' }
+  ]
+}
+
 const CARD_TYPES = ['Sports', 'Trading Card Game (TCG)', 'Non-Sport', 'Gaming', 'Other']
 const CARD_SPORTS = ['Baseball', 'Basketball', 'Football', 'Hockey', 'Soccer', 'Pokemon', 'Magic: The Gathering', 'Yu-Gi-Oh!', 'Other']
 const CARD_CONDITIONS = ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor']
@@ -22,6 +55,7 @@ function CardSubmissionForm({ onSubmit }) {
   // Separate state for submitter info (shared across all cards)
   const [submitterInfo, setSubmitterInfo] = useState({
     gradingCompany: '',
+    serviceTier: '',
     submitterName: '',
     email: '',
     phone: '',
@@ -62,16 +96,32 @@ function CardSubmissionForm({ onSubmit }) {
 
   const handleSubmitterChange = (e) => {
     const { name, value } = e.target
-    setSubmitterInfo(prev => ({
-      ...prev,
-      [name]: value
-    }))
-    // Clear error when user starts typing
-    if (errors[name]) {
+
+    // If changing grading company, reset service tier
+    if (name === 'gradingCompany') {
+      setSubmitterInfo(prev => ({
+        ...prev,
+        [name]: value,
+        serviceTier: ''  // Reset service tier when company changes
+      }))
+      // Clear errors for both company and tier
       setErrors(prev => ({
         ...prev,
-        [name]: ''
+        gradingCompany: '',
+        serviceTier: ''
       }))
+    } else {
+      setSubmitterInfo(prev => ({
+        ...prev,
+        [name]: value
+      }))
+      // Clear error when user starts typing
+      if (errors[name]) {
+        setErrors(prev => ({
+          ...prev,
+          [name]: ''
+        }))
+      }
     }
   }
 
@@ -445,6 +495,7 @@ function CardSubmissionForm({ onSubmit }) {
 
     // Validate submitter info
     if (!submitterInfo.gradingCompany) newErrors.gradingCompany = 'Please select a grading company'
+    if (!submitterInfo.serviceTier) newErrors.serviceTier = 'Please select a service tier'
     if (!submitterInfo.submitterName) newErrors.submitterName = 'Name is required'
     if (!submitterInfo.email) {
       newErrors.email = 'Email is required'
@@ -659,6 +710,37 @@ function CardSubmissionForm({ onSubmit }) {
         {errors.gradingCompany && <div className="error">{errors.gradingCompany}</div>}
       </div>
 
+      {/* Service Tier Selection */}
+      {submitterInfo.gradingCompany && (
+        <div className="form-section">
+          <h3>Select Service Tier</h3>
+          <div className="service-tier-selection">
+            {SERVICE_TIERS[submitterInfo.gradingCompany].map(tier => (
+              <label key={tier.id} className="service-tier-option">
+                <input
+                  type="radio"
+                  name="serviceTier"
+                  value={tier.id}
+                  checked={submitterInfo.serviceTier === tier.id}
+                  onChange={handleSubmitterChange}
+                />
+                <div className="service-tier-details">
+                  <div className="tier-header">
+                    <strong>{tier.name}</strong>
+                    <span className="tier-price">{tier.price}</span>
+                  </div>
+                  <div className="tier-info">
+                    <span className="tier-turnaround">⏱️ {tier.turnaround}</span>
+                    <span className="tier-description">{tier.description}</span>
+                  </div>
+                </div>
+              </label>
+            ))}
+          </div>
+          {errors.serviceTier && <div className="error">{errors.serviceTier}</div>}
+        </div>
+      )}
+
       {/* Image Upload Section */}
       <div className="form-section">
         <h3>Upload Card Images</h3>
@@ -840,8 +922,8 @@ function CardSubmissionForm({ onSubmit }) {
             </div>
           </div>
 
-          {/* Estimated Value Display */}
-          {card.estimatedValue && (
+          {/* Estimated Value Display - HIDDEN FOR NOW, DO NOT DELETE */}
+          {false && card.estimatedValue && (
             <div className="estimated-value">
               <h4>💰 Estimated Card Value</h4>
               <p className="value-range">
