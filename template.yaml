@@ -36,6 +36,30 @@ Resources:
                   - cognito-idp:AdminAddUserToGroup
                 Resource: '*'
 
+  # IAM Role for pre-signup Lambda to link accounts
+  PreSignupFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: CognitoAccountLinking
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:ListUsers
+                  - cognito-idp:AdminLinkProviderForUser
+                Resource: '*'
+
   # Lambda function for post-confirmation trigger (admin group assignment)
   # Defined first to avoid circular dependency
   PostConfirmationFunction:
@@ -54,6 +78,16 @@ Resources:
           CGC_ADMIN_CODE: CGC-SECURE-2024
           SUPER_ADMIN_CODE: SUPER-SECURE-2024
 
+  # Lambda function for pre-signup trigger (automatic account linking)
+  PreSignupFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: CardGradingPreSignup
+      CodeUri: lambda/pre-signup-link/
+      Handler: index.handler
+      Description: Automatically links Google accounts to existing email/password accounts
+      Role: !GetAtt PreSignupFunctionRole.Arn
+
   # Cognito User Pool for Authentication
   CardGradingUserPool:
     Type: AWS::Cognito::UserPool
@@ -66,6 +100,7 @@ Resources:
       UsernameConfiguration:
         CaseSensitive: false
       LambdaConfig:
+        PreSignUp: !GetAtt PreSignupFunction.Arn
         PostConfirmation: !GetAtt PostConfirmationFunction.Arn
       Schema:
         - Name: email
@@ -206,6 +241,15 @@ Resources:
       Description: Super administrator users with access to all submissions
       UserPoolId: !Ref CardGradingUserPool
       Precedence: 0
+
+  # Permission for Cognito to invoke the pre-signup Lambda
+  PreSignupFunctionCognitoPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref PreSignupFunction
+      Principal: cognito-idp.amazonaws.com
+      Action: lambda:InvokeFunction
+      SourceArn: !GetAtt CardGradingUserPool.Arn
 
   # Permission for Cognito to invoke the post-confirmation Lambda
   PostConfirmationFunctionCognitoPermission:

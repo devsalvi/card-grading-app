@@ -45,4 +45,13 @@ manifest_hash = ""
 packagetype = "Zip"
 functions = ["UserGetMySubmissionsFunction"]
 
+[function_build_definitions.78b7f968-8bb5-49b5-bf6a-0cf4ab66aefa]
+codeuri = "/Users/dev/development/claude-projects/card-grading-app/lambda/pre-signup-link"
+runtime = "nodejs18.x"
+architecture = "x86_64"
+handler = "index.handler"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["PreSignupFunction"]
+
 [layer_build_definitions]
