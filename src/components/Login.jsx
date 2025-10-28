@@ -3,13 +3,11 @@ import {
   signInUser,
   signUpUser,
   confirmSignUpUser,
-  isAuthConfigured,
-  isSocialLoginConfigured,
-  signInWithSocial
+  isAuthConfigured
 } from '../services/authService'
 import './Login.css'
 
-function Login({ onLoginSuccess, hideSocialLogin = false }) {
+function Login({ onLoginSuccess }) {
   const [mode, setMode] = useState('signin') // 'signin', 'signup', 'confirm'
   const [formData, setFormData] = useState({
     email: '',
@@ -117,29 +115,6 @@ function Login({ onLoginSuccess, hideSocialLogin = false }) {
     }
   }
 
-  const handleSocialLogin = async (provider) => {
-    try {
-      await signInWithSocial(provider)
-      // User will be redirected to social provider
-      // After successful login, they'll be redirected back to the app
-    } catch (err) {
-      console.error('Social login error:', err)
-
-      // Provide helpful error message
-      if (err.message && err.message.includes('not available')) {
-        setError(
-          `${provider} login is not configured yet. ` +
-          `Please use email/password login or see SOCIAL_LOGIN_SETUP.md for configuration instructions.`
-        )
-      } else {
-        setError(
-          `Social login with ${provider} failed. ` +
-          `The ${provider} identity provider may not be configured in Cognito yet. ` +
-          `Please use email/password login instead.`
-        )
-      }
-    }
-  }
 
   return (
     <div className="login-container">
@@ -154,43 +129,6 @@ function Login({ onLoginSuccess, hideSocialLogin = false }) {
 
         {mode === 'signin' && (
           <form onSubmit={handleSignIn}>
-            {!hideSocialLogin && isSocialLoginConfigured() && (
-              <>
-                <div className="social-login-section">
-                  <button
-                    type="button"
-                    className="social-button google-button"
-                    onClick={() => handleSocialLogin('Google')}
-                    disabled={loading}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 18 18">
-                      <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.92a8.78 8.78 0 0 0 2.68-6.61z"/>
-                      <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.83.86-3.04.86-2.34 0-4.32-1.58-5.02-3.71H.98v2.33A9 9 0 0 0 9 18z"/>
-                      <path fill="#FBBC05" d="M3.98 10.71a5.41 5.41 0 0 1 0-3.42V4.96H.98a9 9 0 0 0 0 8.08l2.99-2.33z"/>
-                      <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 9 0 8.997 8.997 0 0 0 .98 4.96l2.99 2.33C4.68 5.16 6.66 3.58 9 3.58z"/>
-                    </svg>
-                    Continue with Google
-                  </button>
-
-                  <button
-                    type="button"
-                    className="social-button facebook-button"
-                    onClick={() => handleSocialLogin('Facebook')}
-                    disabled={loading}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2">
-                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                    </svg>
-                    Continue with Facebook
-                  </button>
-                </div>
-
-                <div className="divider">
-                  <span>or</span>
-                </div>
-              </>
-            )}
-
             <div className="form-group">
               <label htmlFor="email">Email</label>
               <input
@@ -274,13 +212,13 @@ function Login({ onLoginSuccess, hideSocialLogin = false }) {
             </div>
 
             <div className="admin-signup-section">
-              <h3 className="admin-section-title">Admin Signup (Optional)</h3>
+              <h3 className="admin-section-title">Account Type</h3>
               <p className="admin-section-description">
-                If you're an admin for a grading company, select your company and enter the admin code provided to you.
+                Most users should keep the default "Regular User" option. Only select a company if you have an admin code.
               </p>
 
               <div className="form-group">
-                <label htmlFor="company">Grading Company</label>
+                <label htmlFor="company">I am a:</label>
                 <select
                   id="company"
                   name="company"
@@ -288,12 +226,12 @@ function Login({ onLoginSuccess, hideSocialLogin = false }) {
                   onChange={handleInputChange}
                   disabled={loading}
                 >
-                  <option value="">Regular User (No admin access)</option>
-                  <option value="psa">PSA (Professional Sports Authenticator)</option>
-                  <option value="bgs">BGS (Beckett Grading Services)</option>
-                  <option value="sgc">SGC (Sportscard Guaranty)</option>
-                  <option value="cgc">CGC (Certified Guaranty Company)</option>
-                  <option value="super">Super Admin (All Companies)</option>
+                  <option value="">Regular User (Submit cards for grading)</option>
+                  <option value="psa">PSA Admin (Requires admin code)</option>
+                  <option value="bgs">BGS Admin (Requires admin code)</option>
+                  <option value="sgc">SGC Admin (Requires admin code)</option>
+                  <option value="cgc">CGC Admin (Requires admin code)</option>
+                  <option value="super">Super Admin (Requires admin code)</option>
                 </select>
               </div>
 

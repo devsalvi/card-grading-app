@@ -1,9 +1,24 @@
 import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { isNativePlatform, isAndroid, isIOS } from '../utils/platform'
+import { isAuthenticated, signOutUser } from '../services/authService'
+import Login from '../components/Login'
 import './LandingPage.css'
 
 function LandingPage() {
   const navigate = useNavigate()
+  const [showLogin, setShowLogin] = useState(false)
+  const [isUserAuthenticated, setIsUserAuthenticated] = useState(false)
+
+  // Check authentication status on mount
+  useEffect(() => {
+    checkAuth()
+  }, [])
+
+  const checkAuth = async () => {
+    const authenticated = await isAuthenticated()
+    setIsUserAuthenticated(authenticated)
+  }
 
   const handleGetStarted = () => {
     navigate('/submit')
@@ -13,8 +28,68 @@ function LandingPage() {
     navigate('/admin')
   }
 
+  const handleSignIn = () => {
+    setShowLogin(true)
+  }
+
+  const handleLoginSuccess = async () => {
+    setShowLogin(false)
+    await checkAuth()
+  }
+
+  const handleSignOut = async () => {
+    await signOutUser()
+    setIsUserAuthenticated(false)
+    window.location.reload()
+  }
+
   return (
     <div className="landing-page">
+      {/* Navigation Header */}
+      <nav className="landing-nav">
+        <div className="nav-content">
+          <div className="nav-brand" onClick={() => navigate('/')}>
+            <h1>Collectbl</h1>
+          </div>
+          <div className="nav-links">
+            {isUserAuthenticated ? (
+              <>
+                <button className="nav-link" onClick={handleGetStarted}>
+                  Submit Cards
+                </button>
+                <button className="nav-link" onClick={handleAdminPortal}>
+                  Admin
+                </button>
+                <button className="nav-button-primary" onClick={handleSignOut}>
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="nav-link" onClick={handleAdminPortal}>
+                  Admin Portal
+                </button>
+                <button className="nav-button-primary" onClick={handleSignIn}>
+                  Sign In
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* Login Modal */}
+      {showLogin && (
+        <div className="login-modal-overlay" onClick={() => setShowLogin(false)}>
+          <div className="login-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowLogin(false)}>
+              ×
+            </button>
+            <Login onLoginSuccess={handleLoginSuccess} />
+          </div>
+        </div>
+      )}
+
       {/* Hero Section */}
       <section className="hero">
         <div className="hero-content">

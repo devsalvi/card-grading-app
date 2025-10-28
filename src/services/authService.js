@@ -8,7 +8,6 @@ import {
   getCurrentUser,
   fetchAuthSession,
   fetchUserAttributes,
-  signInWithRedirect,
 } from 'aws-amplify/auth';
 
 // Configure Amplify with Cognito settings
@@ -18,7 +17,6 @@ const configureAuth = () => {
     return false;
   }
 
-  const domain = import.meta.env.VITE_COGNITO_DOMAIN;
   const config = {
     Auth: {
       Cognito: {
@@ -28,49 +26,6 @@ const configureAuth = () => {
       }
     }
   };
-
-  // Add OAuth configuration if domain is provided (for social login)
-  if (domain) {
-    // Detect if running on native platform (Capacitor)
-    const isNative = window.Capacitor && window.Capacitor.isNativePlatform();
-
-    // Use custom URL scheme for native platforms, HTTP(S) for web
-    let redirectSignIn, redirectSignOut;
-    if (isNative) {
-      // Native app redirect URI using custom URL scheme with localhost path
-      // This format is required for Amplify on native platforms
-      redirectSignIn = ['com.cardgrading.app://localhost/'];
-      redirectSignOut = ['com.cardgrading.app://localhost/'];
-    } else if (window.location.hostname === 'localhost') {
-      // Local development
-      redirectSignIn = [window.location.origin, `${window.location.origin}/`];
-      redirectSignOut = [window.location.origin, `${window.location.origin}/`];
-    } else {
-      // Production web
-      redirectSignIn = [
-        'https://collectbl.com',
-        'https://collectbl.com/',
-        'https://main.d1xsxgfyygtbif.amplifyapp.com',
-        'https://main.d1xsxgfyygtbif.amplifyapp.com/'
-      ];
-      redirectSignOut = [
-        'https://collectbl.com',
-        'https://collectbl.com/',
-        'https://main.d1xsxgfyygtbif.amplifyapp.com',
-        'https://main.d1xsxgfyygtbif.amplifyapp.com/'
-      ];
-    }
-
-    config.Auth.Cognito.loginWith = {
-      oauth: {
-        domain: `${domain}.auth.${import.meta.env.VITE_AWS_REGION || 'us-east-1'}.amazoncognito.com`,
-        scopes: ['email', 'openid', 'profile'],
-        redirectSignIn: redirectSignIn,
-        redirectSignOut: redirectSignOut,
-        responseType: 'code',
-      }
-    };
-  }
 
   Amplify.configure(config);
 
@@ -330,32 +285,6 @@ export function isAuthConfigured() {
   return isConfigured;
 }
 
-/**
- * Check if social login is configured
- */
-export function isSocialLoginConfigured() {
-  return isConfigured && !!import.meta.env.VITE_COGNITO_DOMAIN;
-}
-
-/**
- * Sign in with social provider (Google, Facebook, etc.)
- */
-export async function signInWithSocial(provider) {
-  if (!isConfigured) {
-    throw new Error('Authentication is not configured');
-  }
-
-  if (!import.meta.env.VITE_COGNITO_DOMAIN) {
-    throw new Error('Social login is not configured. Please add VITE_COGNITO_DOMAIN to your .env file');
-  }
-
-  try {
-    await signInWithRedirect({ provider });
-  } catch (error) {
-    console.error('Social sign in error:', error);
-    throw error;
-  }
-}
 
 /**
  * Get user attributes (name, email, address, etc.)
