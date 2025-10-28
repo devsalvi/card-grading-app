@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import './CardSubmissionForm.css'
-import { urlToBase64 } from '../utils/imageUtils'
+import { urlToBase64, blobToBase64, compressImage } from '../utils/imageUtils'
 import { analyzeCardWithGemini, getMockCardData } from '../services/cardAnalysis'
 import { submitCardGrading } from '../services/submissionService'
 import { getUserProfile, isAuthenticated } from '../services/authService'
@@ -35,6 +35,7 @@ function CardSubmissionForm({ onSubmit }) {
   const [errors, setErrors] = useState({})
   const [analyzing, setAnalyzing] = useState(false)
   const [autoFilled, setAutoFilled] = useState(false)
+  const [analysisNotification, setAnalysisNotification] = useState(null)
 
   // Auto-populate user info from social login or authenticated session
   useEffect(() => {
@@ -97,25 +98,59 @@ function CardSubmissionForm({ onSubmit }) {
     }
   }
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files)
 
-    // Create new card entries for each uploaded image
-    const newCards = files.map(file => ({
-      image: URL.createObjectURL(file),
-      imageFile: file,
-      cardType: '',
-      sport: '',
-      playerName: '',
-      year: '',
-      manufacturer: '',
-      cardNumber: '',
-      estimatedCondition: '',
-      declaredValue: '',
-      estimatedValue: null
-    }))
+    // Compress each uploaded image before adding to cards
+    console.log(`Compressing ${files.length} uploaded image(s)...`)
 
+    const newCards = await Promise.all(
+      files.map(async (file) => {
+        try {
+          // Compress the uploaded image
+          const { blob: compressedBlob, dataUrl: compressedDataUrl } = await compressImage(file)
+
+          // Create new file from compressed blob
+          const compressedFile = new File([compressedBlob], file.name, { type: 'image/jpeg' })
+
+          return {
+            image: compressedDataUrl, // Use compressed data URL for display
+            imageFile: compressedFile, // Compressed file for submission
+            cardType: '',
+            sport: '',
+            playerName: '',
+            year: '',
+            manufacturer: '',
+            cardNumber: '',
+            estimatedCondition: '',
+            declaredValue: '',
+            estimatedValue: null
+          }
+        } catch (error) {
+          console.error('Failed to compress image:', error)
+          // Fallback to original if compression fails
+          return {
+            image: URL.createObjectURL(file),
+            imageFile: file,
+            cardType: '',
+            sport: '',
+            playerName: '',
+            year: '',
+            manufacturer: '',
+            cardNumber: '',
+            estimatedCondition: '',
+            declaredValue: '',
+            estimatedValue: null
+          }
+        }
+      })
+    )
+
+    // Add new cards to state
     setCards(prev => [...prev, ...newCards])
+
+    // Automatically analyze the newly uploaded images
+    analyzeCards(newCards)
   }
 
   /**
@@ -124,23 +159,31 @@ function CardSubmissionForm({ onSubmit }) {
   const handleCameraCapture = async (source = CameraSource.Camera) => {
     try {
       // Request camera permissions and take photo
+      // Use DataUrl to get base64 directly - works reliably on both emulator and real devices
       const photo = await Camera.getPhoto({
-        resultType: CameraResultType.Uri,
+        resultType: CameraResultType.DataUrl,
         source: source,
         quality: 90,
         allowEditing: false,
         saveToGallery: false
       })
 
-      // Convert the photo to a blob for consistency with file upload
-      const response = await fetch(photo.webPath)
-      const blob = await response.blob()
-      const file = new File([blob], `card-${Date.now()}.jpg`, { type: 'image/jpeg' })
+      // Convert base64 dataUrl to Blob
+      // photo.dataUrl is in format: "data:image/jpeg;base64,..."
+      const response = await fetch(photo.dataUrl)
+      const originalBlob = await response.blob()
 
-      // Create new card entry
+      // Compress the image to reduce file size for API calls
+      console.log('Compressing captured image...')
+      const { blob: compressedBlob, dataUrl: compressedDataUrl } = await compressImage(originalBlob)
+
+      // Create file from compressed blob
+      const file = new File([compressedBlob], `card-${Date.now()}.jpg`, { type: 'image/jpeg' })
+
+      // Create new card entry with compressed image
       const newCard = {
-        image: photo.webPath,
-        imageFile: file,
+        image: compressedDataUrl, // Use compressed dataUrl for display
+        imageFile: file, // Compressed file for submission
         cardType: '',
         sport: '',
         playerName: '',
@@ -152,7 +195,11 @@ function CardSubmissionForm({ onSubmit }) {
         estimatedValue: null
       }
 
+      // Add new card to state
       setCards(prev => [...prev, newCard])
+
+      // Automatically analyze the captured image
+      analyzeCards([newCard])
     } catch (error) {
       console.error('Camera capture error:', error)
       // User cancelled or permission denied - silently handle
@@ -174,17 +221,18 @@ function CardSubmissionForm({ onSubmit }) {
   }
 
   /**
-   * Analyze all uploaded images using backend API (Google Gemini)
+   * Analyze specific cards using backend API (Google Gemini)
    * Each image may contain 1-10 cards which are detected separately
+   * @param {Array} cardsToAnalyze - Array of card objects to analyze
    */
-  const analyzeAllCards = async () => {
-    if (cards.length === 0) return
+  const analyzeCards = async (cardsToAnalyze) => {
+    if (!cardsToAnalyze || cardsToAnalyze.length === 0) return
 
     setAnalyzing(true)
 
     try {
-      // Analyze all images in parallel using backend API
-      const analysisPromises = cards.map(async (card, index) => {
+      // Analyze the specified images in parallel using backend API
+      const analysisPromises = cardsToAnalyze.map(async (card, index) => {
         try {
           // Convert image to base64
           const base64Image = await urlToBase64(card.image)
@@ -237,11 +285,20 @@ function CardSubmissionForm({ onSubmit }) {
           })
         } else {
           // If analysis failed, keep the original card entry
-          newCards.push(cards[imageIndex])
+          newCards.push(cardsToAnalyze[imageIndex])
         }
       })
 
-      setCards(newCards)
+      // Update state: replace the analyzed cards with their results
+      // Use functional update to ensure we work with latest state
+      setCards(prevCards => {
+        // Create a Set of images being analyzed for quick lookup
+        const analyzedImages = new Set(cardsToAnalyze.map(c => c.image))
+
+        // Keep cards that weren't analyzed, add analyzed results
+        const unchangedCards = prevCards.filter(c => !analyzedImages.has(c.image))
+        return [...unchangedCards, ...newCards]
+      })
 
       // Show success notification
       setAutoFilled(true)
@@ -251,15 +308,32 @@ function CardSubmissionForm({ onSubmit }) {
       const failedCount = results.filter(r => !r.success).length
       const successCount = results.filter(r => r.success).length
 
-      if (totalCardsDetected > cards.length) {
-        alert(`Success! Detected ${totalCardsDetected} card(s) across ${successCount} image(s).\nMultiple cards were found in some images and have been separated for individual grading.`)
+      // Show analysis results notification
+      if (totalCardsDetected > cardsToAnalyze.length) {
+        setAnalysisNotification({
+          type: 'success',
+          title: 'Multi-Card Detection Success!',
+          message: `Detected ${totalCardsDetected} card(s) across ${successCount} image(s). Multiple cards were found in some images and have been separated for individual grading.`
+        })
       } else if (failedCount > 0) {
-        alert(`Successfully analyzed ${successCount} of ${results.length} image(s).\n${failedCount} image(s) failed - please fill in details manually.`)
+        setAnalysisNotification({
+          type: 'warning',
+          title: 'Partial Analysis Complete',
+          message: `Successfully analyzed ${successCount} of ${results.length} image(s). ${failedCount} image(s) failed - please fill in details manually.`
+        })
       }
+
+      // Auto-hide notification after 8 seconds
+      setTimeout(() => setAnalysisNotification(null), 8000)
 
     } catch (error) {
       console.error('Card analysis failed:', error)
-      alert(`Failed to analyze cards: ${error.message}\n\nPlease enter details manually.`)
+      setAnalysisNotification({
+        type: 'error',
+        title: 'Analysis Failed',
+        message: `${error.message}. Please enter details manually.`
+      })
+      setTimeout(() => setAnalysisNotification(null), 8000)
     } finally {
       setAnalyzing(false)
     }
@@ -413,39 +487,69 @@ function CardSubmissionForm({ onSubmit }) {
     }
 
     try {
-      // Convert images to base64 for backend upload
-      const cardsWithBase64 = await Promise.all(
-        cards.map(async (card) => {
-          let imageData = null
+      // OPTIMIZATION: Deduplicate image conversion to prevent memory issues on mobile devices
+      // When multiple cards share the same image (multi-card detection from single photo),
+      // convert each unique image only once
 
-          // Convert image URL to base64 if image exists
-          if (card.image) {
-            try {
-              imageData = await urlToBase64(card.image)
-            } catch (error) {
-              console.error('Failed to convert image to base64:', error)
-              // Continue without image data
-            }
-          }
+      // Step 1: Identify and convert unique images
+      const imageCache = new Map()
+      const uniqueImages = new Map()
 
-          return {
-            imageData, // Base64 encoded image for S3 upload
-            cardType: card.cardType,
-            sport: card.sport,
-            playerName: card.playerName,
-            year: card.year,
-            manufacturer: card.manufacturer,
-            cardNumber: card.cardNumber,
-            estimatedCondition: card.estimatedCondition,
-            declaredValue: card.declaredValue,
-            // Include AI analysis metadata
-            detectedCardNumber: card.detectedCardNumber,
-            totalCardsInImage: card.totalCardsInImage,
-            aiAnalyzed: !!(card.detectedCardNumber || card.totalCardsInImage),
-            analyzedAt: card.estimatedValue ? new Date().toISOString() : undefined
+      cards.forEach((card) => {
+        if (card.image) {
+          const cacheKey = card.imageFile ? 'file-' + card.imageFile.name : card.image
+          if (!uniqueImages.has(cacheKey)) {
+            uniqueImages.set(cacheKey, { imageFile: card.imageFile, imageUrl: card.image })
           }
-        })
-      )
+        }
+      })
+
+      // Step 2: Convert each unique image once
+      console.log(`Converting ${uniqueImages.size} unique image(s) for ${cards.length} card(s)`)
+
+      for (const [cacheKey, imageInfo] of uniqueImages.entries()) {
+        try {
+          let imageData
+          if (imageInfo.imageFile) {
+            console.log('Converting image from File object (native platform)')
+            imageData = await blobToBase64(imageInfo.imageFile)
+          } else {
+            console.log('Converting image from URL (web platform)')
+            imageData = await urlToBase64(imageInfo.imageUrl)
+          }
+          imageCache.set(cacheKey, imageData)
+        } catch (error) {
+          console.error('Failed to convert image to base64:', error)
+          imageCache.set(cacheKey, null) // Cache null to prevent retry
+        }
+      }
+
+      // Step 3: Build submission data using cached image conversions
+      const cardsWithBase64 = cards.map((card) => {
+        let imageData = null
+
+        if (card.image) {
+          const cacheKey = card.imageFile ? 'file-' + card.imageFile.name : card.image
+          imageData = imageCache.get(cacheKey) || null
+        }
+
+        return {
+          imageData, // Base64 encoded image for S3 upload
+          cardType: card.cardType,
+          sport: card.sport,
+          playerName: card.playerName,
+          year: card.year,
+          manufacturer: card.manufacturer,
+          cardNumber: card.cardNumber,
+          estimatedCondition: card.estimatedCondition,
+          declaredValue: card.declaredValue,
+          // Include AI analysis metadata
+          detectedCardNumber: card.detectedCardNumber,
+          totalCardsInImage: card.totalCardsInImage,
+          aiAnalyzed: !!(card.detectedCardNumber || card.totalCardsInImage),
+          analyzedAt: card.estimatedValue ? new Date().toISOString() : undefined
+        }
+      })
 
       // Combine submitter info with all cards for submission
       const submission = {
@@ -491,10 +595,43 @@ function CardSubmissionForm({ onSubmit }) {
     <form className="card-submission-form" onSubmit={handleSubmit}>
       <h2>Card Grading Submission</h2>
 
+      {/* Loading modal during analysis */}
+      {analyzing && (
+        <div className="loading-modal-overlay">
+          <div className="loading-modal">
+            <div className="loading-spinner"></div>
+            <h3>Analyzing Your Cards</h3>
+            <p>Please wait while we detect and extract card details...</p>
+          </div>
+        </div>
+      )}
+
       {/* Auto-fill notification */}
       {autoFilled && (
         <div className="auto-fill-notification">
           ✓ All cards automatically analyzed! Review and adjust details as needed.
+        </div>
+      )}
+
+      {/* Analysis results notification */}
+      {analysisNotification && (
+        <div className={`analysis-notification ${analysisNotification.type}`}>
+          <div className="notification-header">
+            <span className="notification-icon">
+              {analysisNotification.type === 'success' && '✓'}
+              {analysisNotification.type === 'warning' && '⚠'}
+              {analysisNotification.type === 'error' && '✕'}
+            </span>
+            <strong>{analysisNotification.title}</strong>
+            <button
+              className="notification-close"
+              onClick={() => setAnalysisNotification(null)}
+              type="button"
+            >
+              ×
+            </button>
+          </div>
+          <p className="notification-message">{analysisNotification.message}</p>
         </div>
       )}
 
@@ -565,15 +702,7 @@ function CardSubmissionForm({ onSubmit }) {
 
           {cards.length > 0 && (
             <div className="cards-preview">
-              <p>{cards.length} card(s) uploaded</p>
-              <button
-                type="button"
-                className="analyze-button"
-                onClick={analyzeAllCards}
-                disabled={analyzing}
-              >
-                {analyzing ? 'Getting Image Details...' : 'Get Image Details'}
-              </button>
+              <p>{cards.length} card(s) ready</p>
             </div>
           )}
         </div>

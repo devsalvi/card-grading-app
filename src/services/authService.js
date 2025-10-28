@@ -31,22 +31,42 @@ const configureAuth = () => {
 
   // Add OAuth configuration if domain is provided (for social login)
   if (domain) {
-    // Use explicit URLs for production, dynamic for local
-    const redirectUrls = window.location.hostname === 'localhost'
-      ? [window.location.origin, `${window.location.origin}/`]
-      : [
-          'https://collectbl.com',
-          'https://collectbl.com/',
-          'https://main.d1xsxgfyygtbif.amplifyapp.com',
-          'https://main.d1xsxgfyygtbif.amplifyapp.com/'
-        ];
+    // Detect if running on native platform (Capacitor)
+    const isNative = window.Capacitor && window.Capacitor.isNativePlatform();
+
+    // Use custom URL scheme for native platforms, HTTP(S) for web
+    let redirectSignIn, redirectSignOut;
+    if (isNative) {
+      // Native app redirect URI using custom URL scheme with localhost path
+      // This format is required for Amplify on native platforms
+      redirectSignIn = ['com.cardgrading.app://localhost/'];
+      redirectSignOut = ['com.cardgrading.app://localhost/'];
+    } else if (window.location.hostname === 'localhost') {
+      // Local development
+      redirectSignIn = [window.location.origin, `${window.location.origin}/`];
+      redirectSignOut = [window.location.origin, `${window.location.origin}/`];
+    } else {
+      // Production web
+      redirectSignIn = [
+        'https://collectbl.com',
+        'https://collectbl.com/',
+        'https://main.d1xsxgfyygtbif.amplifyapp.com',
+        'https://main.d1xsxgfyygtbif.amplifyapp.com/'
+      ];
+      redirectSignOut = [
+        'https://collectbl.com',
+        'https://collectbl.com/',
+        'https://main.d1xsxgfyygtbif.amplifyapp.com',
+        'https://main.d1xsxgfyygtbif.amplifyapp.com/'
+      ];
+    }
 
     config.Auth.Cognito.loginWith = {
       oauth: {
         domain: `${domain}.auth.${import.meta.env.VITE_AWS_REGION || 'us-east-1'}.amazoncognito.com`,
         scopes: ['email', 'openid', 'profile'],
-        redirectSignIn: redirectUrls,
-        redirectSignOut: redirectUrls,
+        redirectSignIn: redirectSignIn,
+        redirectSignOut: redirectSignOut,
         responseType: 'code',
       }
     };

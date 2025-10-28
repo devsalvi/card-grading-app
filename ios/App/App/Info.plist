@@ -51,5 +51,16 @@
 	<string>This app needs access to your photo library to select card images for grading submission.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>This app needs permission to save card photos to your photo library.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.cardgrading.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.cardgrading.app</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
