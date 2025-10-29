@@ -4,6 +4,7 @@ import { urlToBase64, blobToBase64, compressImage } from '../utils/imageUtils'
 import { analyzeCardWithGemini, getMockCardData } from '../services/cardAnalysis'
 import { submitCardGrading } from '../services/submissionService'
 import { getUserProfile, isAuthenticated } from '../services/authService'
+import { getAllServiceTiers } from '../services/serviceTiersService'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 import { isNativePlatform } from '../utils/platform'
 
@@ -13,39 +14,6 @@ const GRADING_COMPANIES = [
   { id: 'sgc', name: 'SGC (Sportscard Guaranty)', turnaround: '5-30 days', price: '$15-$100' },
   { id: 'cgc', name: 'CGC (Certified Guaranty Company)', turnaround: '20-40 days', price: '$18-$125' }
 ]
-
-// Service tiers for each grading company
-const SERVICE_TIERS = {
-  psa: [
-    { id: 'walkthrough', name: 'Walk-through', turnaround: '2 business days', price: '$600/card', description: 'Fastest service' },
-    { id: 'super_express', name: 'Super Express', turnaround: '3 business days', price: '$300/card', description: 'Express service' },
-    { id: 'express', name: 'Express', turnaround: '5 business days', price: '$150/card', description: 'Quick turnaround' },
-    { id: 'regular', name: 'Regular', turnaround: '15 business days', price: '$75/card', description: 'Standard service' },
-    { id: 'value', name: 'Value', turnaround: '30 business days', price: '$25/card', description: 'Economy option' },
-    { id: 'bulk', name: 'Bulk', turnaround: '45+ business days', price: '$20/card', description: 'Bulk submissions (20+ cards)' }
-  ],
-  bgs: [
-    { id: 'premium', name: 'Premium', turnaround: '5 business days', price: '$200/card', description: 'Fastest service' },
-    { id: 'express', name: 'Express', turnaround: '10 business days', price: '$100/card', description: 'Express service' },
-    { id: 'standard', name: 'Standard', turnaround: '30 business days', price: '$50/card', description: 'Standard service' },
-    { id: 'economy', name: 'Economy', turnaround: '60 business days', price: '$25/card', description: 'Budget option' }
-  ],
-  sgc: [
-    { id: 'walkthrough', name: 'Walk-through', turnaround: '1 business day', price: '$500/card', description: 'Same day service' },
-    { id: 'next_day', name: 'Next Day', turnaround: '2 business days', price: '$250/card', description: 'Next business day' },
-    { id: '2_day', name: '2-Day', turnaround: '2 business days', price: '$100/card', description: 'Two day service' },
-    { id: '5_day', name: '5-Day', turnaround: '5 business days', price: '$50/card', description: 'Five day service' },
-    { id: '10_day', name: '10-Day', turnaround: '10 business days', price: '$30/card', description: 'Ten day service' },
-    { id: '20_day', name: '20-Day', turnaround: '20 business days', price: '$20/card', description: 'Twenty day service' },
-    { id: 'bulk', name: 'Bulk', turnaround: '30+ business days', price: '$15/card', description: 'Bulk submissions' }
-  ],
-  cgc: [
-    { id: 'walkthrough', name: 'Walk-through', turnaround: '3 business days', price: '$400/card', description: 'Fastest service' },
-    { id: 'express', name: 'Express', turnaround: '7 business days', price: '$150/card', description: 'Express service' },
-    { id: 'standard', name: 'Standard', turnaround: '20 business days', price: '$50/card', description: 'Standard service' },
-    { id: 'economy', name: 'Economy', turnaround: '40 business days', price: '$25/card', description: 'Budget option' }
-  ]
-}
 
 const CARD_TYPES = ['Sports', 'Trading Card Game (TCG)', 'Non-Sport', 'Gaming', 'Other']
 const CARD_SPORTS = ['Baseball', 'Basketball', 'Football', 'Hockey', 'Soccer', 'Pokemon', 'Magic: The Gathering', 'Yu-Gi-Oh!', 'Other']
@@ -70,6 +38,27 @@ function CardSubmissionForm({ onSubmit }) {
   const [analyzing, setAnalyzing] = useState(false)
   const [autoFilled, setAutoFilled] = useState(false)
   const [analysisNotification, setAnalysisNotification] = useState(null)
+
+  // Service tiers loaded from API with caching
+  const [serviceTiers, setServiceTiers] = useState({})
+  const [loadingTiers, setLoadingTiers] = useState(true)
+
+  // Load service tiers on mount
+  useEffect(() => {
+    const loadServiceTiers = async () => {
+      try {
+        setLoadingTiers(true)
+        const tiers = await getAllServiceTiers()
+        setServiceTiers(tiers)
+      } catch (error) {
+        console.error('Error loading service tiers:', error)
+      } finally {
+        setLoadingTiers(false)
+      }
+    }
+
+    loadServiceTiers()
+  }, [])
 
   // Auto-populate user info from social login or authenticated session
   useEffect(() => {
@@ -714,29 +703,35 @@ function CardSubmissionForm({ onSubmit }) {
       {submitterInfo.gradingCompany && (
         <div className="form-section">
           <h3>Select Service Tier</h3>
-          <div className="service-tier-selection">
-            {SERVICE_TIERS[submitterInfo.gradingCompany].map(tier => (
-              <label key={tier.id} className="service-tier-option">
-                <input
-                  type="radio"
-                  name="serviceTier"
-                  value={tier.id}
-                  checked={submitterInfo.serviceTier === tier.id}
-                  onChange={handleSubmitterChange}
-                />
-                <div className="service-tier-details">
-                  <div className="tier-header">
-                    <strong>{tier.name}</strong>
-                    <span className="tier-price">{tier.price}</span>
+          {loadingTiers ? (
+            <div className="loading-message">Loading service tiers...</div>
+          ) : serviceTiers[submitterInfo.gradingCompany] && serviceTiers[submitterInfo.gradingCompany].length > 0 ? (
+            <div className="service-tier-selection">
+              {serviceTiers[submitterInfo.gradingCompany].map(tier => (
+                <label key={tier.id} className="service-tier-option">
+                  <input
+                    type="radio"
+                    name="serviceTier"
+                    value={tier.id}
+                    checked={submitterInfo.serviceTier === tier.id}
+                    onChange={handleSubmitterChange}
+                  />
+                  <div className="service-tier-details">
+                    <div className="tier-header">
+                      <strong>{tier.name}</strong>
+                      <span className="tier-price">{tier.price}</span>
+                    </div>
+                    <div className="tier-info">
+                      <span className="tier-turnaround">⏱️ {tier.turnaround}</span>
+                      <span className="tier-description">{tier.description}</span>
+                    </div>
                   </div>
-                  <div className="tier-info">
-                    <span className="tier-turnaround">⏱️ {tier.turnaround}</span>
-                    <span className="tier-description">{tier.description}</span>
-                  </div>
-                </div>
-              </label>
-            ))}
-          </div>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <div className="info-message">No service tiers available for this company.</div>
+          )}
           {errors.serviceTier && <div className="error">{errors.serviceTier}</div>}
         </div>
       )}

@@ -849,6 +849,27 @@
   font-weight: 500;
 }
 
+/* Loading and Info Messages */
+.loading-message,
+.info-message {
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  text-align: center;
+}
+
+.loading-message {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+.info-message {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
 /* Tablet Styles */
 @media (max-width: 768px) {
   .card-submission-form {

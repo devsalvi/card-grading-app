@@ -54,4 +54,22 @@ manifest_hash = ""
 packagetype = "Zip"
 functions = ["PreSignupFunction"]
 
+[function_build_definitions.aabc934e-7021-4560-8889-544c0cf0dee7]
+codeuri = "/Users/dev/development/claude-projects/card-grading-app/lambda/service-tiers"
+runtime = "nodejs18.x"
+architecture = "x86_64"
+handler = "index.handler"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["GetServiceTiersFunction"]
+
+[function_build_definitions.dc704c0f-e51c-45ad-999d-11aac17eb514]
+codeuri = "/Users/dev/development/claude-projects/card-grading-app/lambda/admin-service-tiers"
+runtime = "nodejs18.x"
+architecture = "x86_64"
+handler = "index.listTiers"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["AdminListServiceTiersFunction", "AdminUpdateServiceTierFunction", "AdminDeleteServiceTierFunction"]
+
 [layer_build_definitions]

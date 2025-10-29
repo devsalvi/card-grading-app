@@ -1,0 +1,22 @@
+{
+  "name": "admin-service-tiers-lambda",
+  "version": "1.0.0",
+  "description": "Lambda function for admin service tier management",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "lambda",
+    "dynamodb",
+    "service-tiers",
+    "admin"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.705.0",
+    "@aws-sdk/lib-dynamodb": "^3.705.0",
+    "@aws-sdk/util-dynamodb": "^3.705.0"
+  }
+}

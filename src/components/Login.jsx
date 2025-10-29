@@ -13,6 +13,8 @@ function Login({ onLoginSuccess }) {
     email: '',
     password: '',
     name: '',
+    phone: '',
+    address: '',
     confirmationCode: '',
     company: '',
     adminCode: ''
@@ -73,6 +75,8 @@ function Login({ onLoginSuccess }) {
         email: formData.email,
         password: formData.password,
         name: formData.name,
+        phone: formData.phone,
+        address: formData.address,
         company: formData.company,
         adminCode: formData.adminCode
       })
@@ -194,6 +198,34 @@ function Login({ onLoginSuccess }) {
                 required
                 disabled={loading}
               />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="phone">Phone Number</label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                disabled={loading}
+                placeholder="+1234567890 (with country code)"
+              />
+              <small>Optional: Include country code (e.g., +1 for US)</small>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="address">Address</label>
+              <textarea
+                id="address"
+                name="address"
+                value={formData.address}
+                onChange={handleInputChange}
+                disabled={loading}
+                rows="3"
+                placeholder="Street, City, State, ZIP"
+              />
+              <small>Optional: Your address will be used to pre-fill submission forms</small>
             </div>
 
             <div className="form-group">

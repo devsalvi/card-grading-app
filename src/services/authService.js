@@ -38,7 +38,7 @@ const isConfigured = configureAuth();
 /**
  * Sign up a new user
  */
-export async function signUpUser({ email, password, name, company, adminCode }) {
+export async function signUpUser({ email, password, name, phone, address, company, adminCode }) {
   if (!isConfigured) {
     throw new Error('Authentication is not configured');
   }
@@ -48,6 +48,14 @@ export async function signUpUser({ email, password, name, company, adminCode }) 
       email,
       name
     };
+
+    // Add standard attributes if provided
+    if (phone) {
+      userAttributes['phone_number'] = phone;
+    }
+    if (address) {
+      userAttributes['address'] = address;
+    }
 
     // Add custom attributes for admin signup if provided
     if (company) {

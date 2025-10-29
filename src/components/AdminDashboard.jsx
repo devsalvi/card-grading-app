@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getCurrentAuthUser, signOutUser, isAdmin, getAdminCompany } from '../services/authService'
 import { getSubmissionById, listAllSubmissions } from '../services/adminService'
+import ServiceTierManager from './ServiceTierManager'
 import './AdminDashboard.css'
 
 function AdminDashboard({ onLogout }) {
@@ -12,6 +13,7 @@ function AdminDashboard({ onLogout }) {
   const [error, setError] = useState('')
   const [isUserAdmin, setIsUserAdmin] = useState(false)
   const [companyInfo, setCompanyInfo] = useState({ isSuperAdmin: false, company: null, companyName: null })
+  const [activeTab, setActiveTab] = useState('submissions') // 'submissions' or 'service-tiers'
 
   useEffect(() => {
     checkUserAndLoadData()
@@ -127,8 +129,27 @@ function AdminDashboard({ onLogout }) {
         <button onClick={handleSignOut} className="sign-out-button">Sign Out</button>
       </div>
 
-      {/* Search Section */}
-      <div className="admin-section">
+      {/* Tab Navigation */}
+      <div className="admin-tabs">
+        <button
+          className={`tab-button ${activeTab === 'submissions' ? 'active' : ''}`}
+          onClick={() => setActiveTab('submissions')}
+        >
+          Submissions
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'service-tiers' ? 'active' : ''}`}
+          onClick={() => setActiveTab('service-tiers')}
+        >
+          Service Tiers
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'submissions' && (
+        <>
+          {/* Search Section */}
+          <div className="admin-section">
         <h2>Search Submission</h2>
         <form onSubmit={handleSearch} className="search-form">
           <div className="search-input-group">
@@ -281,6 +302,15 @@ function AdminDashboard({ onLogout }) {
           <p className="no-data">No recent submissions found.</p>
         )}
       </div>
+        </>
+      )}
+
+      {/* Service Tiers Tab */}
+      {activeTab === 'service-tiers' && (
+        <div className="admin-section">
+          <ServiceTierManager adminCompany={companyInfo.isSuperAdmin ? null : companyInfo.company} />
+        </div>
+      )}
     </div>
   )
 }

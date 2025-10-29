@@ -10,6 +10,8 @@ Globals:
     Environment:
       Variables:
         DYNAMODB_TABLE_NAME: !Ref CardGradingSubmissionsTable
+        SERVICE_TIERS_TABLE_NAME: !Ref ServiceTiersTable
+        SERVICE_TIER_AUDIT_TABLE_NAME: !Ref ServiceTierAuditTable
         S3_BUCKET_NAME: !Ref CardImagesS3Bucket
 
 Resources:
@@ -108,6 +110,14 @@ Resources:
           Mutable: false
           Required: true
         - Name: name
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+        - Name: phone_number
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+        - Name: address
           AttributeDataType: String
           Mutable: true
           Required: false
@@ -296,6 +306,50 @@ Resources:
         - Key: Environment
           Value: Production
 
+  # DynamoDB Table for Service Tiers
+  ServiceTiersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ServiceTiers
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: company
+          AttributeType: S
+        - AttributeName: tierId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: company
+          KeyType: HASH
+        - AttributeName: tierId
+          KeyType: RANGE
+      Tags:
+        - Key: Application
+          Value: CardGradingApp
+        - Key: Environment
+          Value: Production
+
+  # DynamoDB Table for Service Tier Audit Log
+  ServiceTierAuditTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ServiceTierAudit
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: auditId
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: auditId
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      Tags:
+        - Key: Application
+          Value: CardGradingApp
+        - Key: Environment
+          Value: Production
+
   # S3 Bucket for Card Images
   CardImagesS3Bucket:
     Type: AWS::S3::Bucket
@@ -458,6 +512,92 @@ Resources:
             Auth:
               Authorizer: CognitoAuthorizer
 
+  # Lambda Function for Service Tiers - Public endpoint (no auth)
+  GetServiceTiersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: CardGradingGetServiceTiers
+      CodeUri: lambda/service-tiers/
+      Handler: index.handler
+      Description: 'Public endpoint to get service tiers by company'
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ServiceTiersTable
+      Events:
+        GetServiceTiers:
+          Type: Api
+          Properties:
+            Path: /service-tiers
+            Method: GET
+            RestApiId: !Ref CardGradingAPI
+
+  # Lambda Function for Admin - List Service Tiers
+  AdminListServiceTiersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: CardGradingAdminListServiceTiers
+      CodeUri: lambda/admin-service-tiers/
+      Handler: index.listTiers
+      Description: 'Admin function to list service tiers'
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ServiceTiersTable
+      Events:
+        ListServiceTiers:
+          Type: Api
+          Properties:
+            Path: /admin/service-tiers
+            Method: GET
+            RestApiId: !Ref CardGradingAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  # Lambda Function for Admin - Update Service Tier
+  AdminUpdateServiceTierFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: CardGradingAdminUpdateServiceTier
+      CodeUri: lambda/admin-service-tiers/
+      Handler: index.updateTier
+      Description: 'Admin function to update/create service tier'
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ServiceTiersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ServiceTierAuditTable
+      Events:
+        UpdateServiceTier:
+          Type: Api
+          Properties:
+            Path: /admin/service-tiers
+            Method: PUT
+            RestApiId: !Ref CardGradingAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  # Lambda Function for Admin - Delete Service Tier
+  AdminDeleteServiceTierFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: CardGradingAdminDeleteServiceTier
+      CodeUri: lambda/admin-service-tiers/
+      Handler: index.deleteTier
+      Description: 'Admin function to delete service tier'
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ServiceTiersTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ServiceTierAuditTable
+      Events:
+        DeleteServiceTier:
+          Type: Api
+          Properties:
+            Path: /admin/service-tiers
+            Method: DELETE
+            RestApiId: !Ref CardGradingAPI
+            Auth:
+              Authorizer: CognitoAuthorizer
+
   # API Gateway
   CardGradingAPI:
     Type: AWS::Serverless::Api
@@ -465,7 +605,7 @@ Resources:
       Name: CardGradingAPI
       StageName: prod
       Cors:
-        AllowMethods: "'GET,POST,OPTIONS'"
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
         AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
         AllowOrigin: "'*'"
       Auth:
